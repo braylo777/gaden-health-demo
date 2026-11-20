@@ -17,9 +17,27 @@ A working simulation of the Gaden framework: closed-loop control of the brain's 
 
 ```bash
 pip install numpy matplotlib pytest
-python -m pytest -q          # 7 tests
+python -m pytest -q          # 7 Python tests
 python -m gaden demo         # charts + report in ./out
+cd rust && cargo test        # Rust port + parity with Python
 ```
+
+## Rust port (pyCrust)
+Every module also exists in Rust, in [`rust/`](rust/), with no dependencies. Python is the reference; Rust mirrors it.
+
+| Python | Rust |
+|---|---|
+| `gaden/neuron.py` | `rust/src/neuron.rs` |
+| `gaden/pomc.py` | `rust/src/pomc.rs` |
+| `gaden/control.py` | `rust/src/control.rs` |
+
+Parity, measured against [`rust/tests/fixtures/parity.json`](rust/tests/fixtures/parity.json) (written by the Python code):
+- Neuron at 6 currents (0–300 µA/cm²): same spike counts, same block verdicts, voltage samples equal within 1e-9.
+- POMC waveform: same pulse times in 3 s, same envelope, same charge (3.75 nC) and duty cycle.
+- Controller, 4 noise-free scenarios (closed and open loop, ±30% gain error, 60 Hz hunger peak): same trajectories and metrics within 1e-9.
+- Same eigenvalues (real part −0.13, stable).
+
+Sensor noise uses a small built-in generator in Rust, not numpy's, so noisy runs differ run for run; the Rust stress test still requires a pass rate above 85%.
 
 ## Results (v0.1.0, seed fixed)
 

@@ -1,0 +1,11 @@
+[package]
+name = "gaden"
+version = "0.1.0"
+edition = "2021"
+description = "Rust port (pyCrust) of the Gaden closed-loop appetite simulation. Research only."
+license = "MIT"
+
+[dependencies]
+
+[dev-dependencies]
+serde_json = "1"
