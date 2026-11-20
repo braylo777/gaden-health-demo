@@ -1,0 +1,50 @@
+{
+ "Rest, 0 uA/cm2": {
+  "spikes": 0,
+  "blocked": false,
+  "v_tail_mean_mv": -62.72917680309646
+ },
+ "Tonic, 20 uA/cm2": {
+  "spikes": 25,
+  "blocked": false,
+  "v_tail_mean_mv": -51.5299322591007
+ },
+ "High-current block, 300 uA/cm2": {
+  "spikes": 1,
+  "blocked": true,
+  "v_tail_mean_mv": -33.606833478800475
+ },
+ "no_controller": {
+  "agrp_max_hz": 29.748411944880075,
+  "agrp_mean_hz": 20.733263888888988,
+  "pomc_mean_hz": 3.0,
+  "frac_agrp_below_2hz": 0.0,
+  "u_agrp_peak_ua": 0.0,
+  "u_pomc_mean_ua": 0.0
+ },
+ "closed_loop": {
+  "agrp_max_hz": 1.538377617975196,
+  "agrp_mean_hz": 0.8887121683581457,
+  "pomc_mean_hz": 7.99702251606717,
+  "frac_agrp_below_2hz": 1.0,
+  "u_agrp_peak_ua": 28.83117218175805,
+  "u_pomc_mean_ua": 9.962534224006868
+ },
+ "eigenvalue_real_parts": [
+  [
+   -0.13,
+   -0.13
+  ],
+  [
+   -0.13,
+   -0.13
+  ]
+ ],
+ "monte_carlo": {
+  "runs": 200,
+  "pass_rate": 0.92,
+  "worst_agrp_max_hz": 10.358077291530073,
+  "mean_agrp_hz": 0.9472983543959095,
+  "criteria": "after 120 s: AgRP < 2 Hz for >95% of time and POMC mean within 1 Hz of 8 Hz; plant gain error +-30%, hunger peak 20-40 Hz, sensor noise 0.3 Hz"
+ }
+}
