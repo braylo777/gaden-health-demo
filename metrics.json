@@ -1,0 +1,24 @@
+{
+  "agrp_peak_hz": 1.0357,
+  "agrp_peak_open_loop_hz": 30.0000,
+  "stress_pass": 0.8292,
+  "stress_pass_controller": "pid",
+  "scenarios": 240,
+  "controllers": {
+    "pid": {"stress_pass": 0.8292, "worst_agrp_hz": 17.5420, "mean_frac_agrp_below_2hz": 0.9591, "mean_pomc_err_hz": 0.0008, "mean_u_agrp_ua": 15.8615},
+    "mpc": {"stress_pass": 0.8250, "worst_agrp_hz": 17.5420, "mean_frac_agrp_below_2hz": 0.9591, "mean_pomc_err_hz": 0.0012, "mean_u_agrp_ua": 15.8619},
+    "bandit": {"stress_pass": 0.8167, "worst_agrp_hz": 17.8705, "mean_frac_agrp_below_2hz": 0.9511, "mean_pomc_err_hz": 0.0502, "mean_u_agrp_ua": 20.3127},
+    "open": {"stress_pass": 0.0000, "worst_agrp_hz": 46.0215, "mean_frac_agrp_below_2hz": 0.2506, "mean_pomc_err_hz": 4.5928, "mean_u_agrp_ua": 0.0000}
+  },
+  "stress_by_category": {"nominal": {"n": 2, "pass": 2}, "dose": {"n": 10, "pass": 10}, "sleep_loss": {"n": 18, "pass": 13}, "fasting": {"n": 90, "pass": 69}, "binge": {"n": 120, "pass": 105}},
+  "tests": 178,
+  "tests_passing": 178,
+  "loc_rust": 3259,
+  "coverage": 0.9710,
+  "w_ghr_calibrated": 56.4594,
+  "fit_rmse": 0.0120,
+  "fit_loo_rmse": 0.5497,
+  "fit_targets": 9,
+  "fit_free_params": 9,
+  "note": "Simulation only. Not medical advice. fit_* are relative RMSE vs published summary values (data/SOURCES.md)."
+}
