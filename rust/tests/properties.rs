@@ -72,9 +72,11 @@ fn prop_linear_loop_stable_over_gain_range() {
     // Stability of the linearised PI loop for every plant gain error in [0.5, 2.0].
     let mut r = Rng(103);
     for _ in 0..2000 {
-        let mut p = Plant::default();
-        p.gain = [-uni(&mut r, 0.5, 2.0), uni(&mut r, 0.25, 1.0)];
-        p.tau = uni(&mut r, 1.0, 20.0);
+        let p = Plant {
+            gain: [-uni(&mut r, 0.5, 2.0), uni(&mut r, 0.25, 1.0)],
+            tau: uni(&mut r, 1.0, 20.0),
+            ..Plant::default()
+        };
         for ch in eigen_real_parts(&p, &Pi::default()) {
             assert!(ch[0] < 0.0 && ch[1] < 0.0, "{p:?}");
         }
@@ -211,8 +213,10 @@ fn prop_leptin_shape_bounded() {
 fn prop_meal_mass_conserved() {
     // Without absorption, stomach + gut carbs are conserved: emptying only moves mass.
     let mut r = Rng(111);
-    let mut p = Params::default();
-    p.gut_k = 0.0;
+    let p = Params {
+        gut_k: 0.0,
+        ..Params::default()
+    };
     for _ in 0..50 {
         let g = uni(&mut r, 1.0, 200.0);
         let mut s = State::basal(&p);

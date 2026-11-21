@@ -133,9 +133,7 @@ impl Controller for Mpc {
                 };
             }
         } else {
-            for i in 0..2 {
-                self.d[i] = y[i];
-            }
+            self.d = y;
         }
         let mut u = [0.0; 2];
         for i in 0..2 {

@@ -106,7 +106,11 @@ fn by_name_unknown() {
 
 #[test]
 fn pid_without_derivative_matches_pi() {
-    let mut pid = { let mut v = Pid::default(); v.kd = [0.0; 2]; v };
+    let mut pid = {
+        let mut v = Pid::default();
+        v.kd = [0.0; 2];
+        v
+    };
     let mut pi = gaden::control::Pi::default();
     let mut r = Rng(3);
     for _ in 0..1000 {
@@ -119,7 +123,12 @@ fn pid_without_derivative_matches_pi() {
 
 #[test]
 fn pid_derivative_opposes_rising_agrp() {
-    let mut a = { let mut v = Pid::default(); v.ki = [0.0; 2]; v.kp = [0.0; 2]; v };
+    let mut a = {
+        let mut v = Pid::default();
+        v.ki = [0.0; 2];
+        v.kp = [0.0; 2];
+        v
+    };
     a.step([5.0, 8.0], 1.0, UMAX);
     let u = a.step([10.0, 8.0], 1.0, UMAX);
     assert!(u[0] > 0.0); // rising AgRP -> more inhibition current
@@ -156,7 +165,12 @@ fn mpc_solve_sign() {
 
 #[test]
 fn mpc_solve_steady_state_exact_for_long_horizon() {
-    let m = { let mut v = Mpc::default(); v.horizon = 2000; v.lambda = [0.0; 2]; v };
+    let m = {
+        let mut v = Mpc::default();
+        v.horizon = 2000;
+        v.lambda = [0.0; 2];
+        v
+    };
     let u = m.solve(0, 21.0, 21.0, 1.0);
     // steady state d + g u = target -> u = (21 - 1) / 1
     assert!((u - 20.0).abs() < 0.05, "u {u}");
@@ -165,7 +179,11 @@ fn mpc_solve_steady_state_exact_for_long_horizon() {
 #[test]
 fn mpc_lambda_shrinks_input() {
     let a = Mpc::default().solve(0, 20.0, 20.0, 1.0);
-    let b = { let mut v = Mpc::default(); v.lambda = [100.0, 100.0]; v }
+    let b = {
+        let mut v = Mpc::default();
+        v.lambda = [100.0, 100.0];
+        v
+    }
     .solve(0, 20.0, 20.0, 1.0);
     assert!(b < a);
 }

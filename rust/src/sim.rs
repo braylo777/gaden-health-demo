@@ -313,7 +313,10 @@ pub fn run_suite(name: &str, scenarios: &[Scenario], p: &Params, c: &Coupling) -
 pub fn calibrate_coupling(p: &Params, base: &Coupling, peak_hz: f64) -> Coupling {
     let sc = nominal();
     let peak = |w: f64| {
-        let c = Coupling { w_ghr: w, ..base.clone() };
+        let c = Coupling {
+            w_ghr: w,
+            ..base.clone()
+        };
         run_day(&sc, None, p, &c).agrp_max_hz
     };
     let (mut lo, mut hi) = (0.0, 400.0);
@@ -325,5 +328,8 @@ pub fn calibrate_coupling(p: &Params, base: &Coupling, peak_hz: f64) -> Coupling
             hi = mid;
         }
     }
-    Coupling { w_ghr: 0.5 * (lo + hi), ..base.clone() }
+    Coupling {
+        w_ghr: 0.5 * (lo + hi),
+        ..base.clone()
+    }
 }

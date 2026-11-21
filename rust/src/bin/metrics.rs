@@ -56,7 +56,7 @@ fn coverage(root: &Path) -> Option<f64> {
     let tail = &s[s.rfind("\"totals\"")?..];
     let lines = &tail[tail.find("\"lines\"")?..];
     let pct = &lines[lines.find("\"percent\":")? + 10..];
-    let end = pct.find(|c: char| c == ',' || c == '}')?;
+    let end = pct.find([',', '}'])?;
     pct[..end].trim().parse().ok()
 }
 
@@ -166,9 +166,9 @@ fn main() {
     let _ = writeln!(j, "  \"scenarios\": {},", suite.len());
     j.push_str("  \"controllers\": {\n");
     for (i, r) in reps.iter().enumerate() {
-        let _ = write!(
+        let _ = writeln!(
             j,
-            "    \"{}\": {{\"stress_pass\": {}, \"worst_agrp_hz\": {}, \"mean_frac_agrp_below_2hz\": {}, \"mean_pomc_err_hz\": {}, \"mean_u_agrp_ua\": {}}}{}\n",
+            "    \"{}\": {{\"stress_pass\": {}, \"worst_agrp_hz\": {}, \"mean_frac_agrp_below_2hz\": {}, \"mean_pomc_err_hz\": {}, \"mean_u_agrp_ua\": {}}}{}",
             r.controller,
             json_f(r.pass_rate()),
             json_f(r.worst_agrp_hz),
