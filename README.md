@@ -1,65 +1,115 @@
 # gaden-health-demo
 
-A working simulation of the Gaden framework: closed-loop control of the brain's hunger circuit (paper: "Closed-Loop Electrochemical Neural Interfaces for Hypothalamic Appetite Regulation").
+A simulation of the Gaden framework: closed-loop control of the brain's hunger circuit (paper: "Closed-Loop Electrochemical Neural Interfaces for Hypothalamic Appetite Regulation").
 
-> **Research and education only.** This is a computer model. It is not a medical device, it is not tested in animals or people, and it makes no health claim.
+> **Simulation only. Not medical advice.** This is a computer model. It is not a medical device. It is not tested in animals or people. It makes no health claim. Do not use it to make decisions about food, sleep, drugs or treatment.
 
-## What it runs
+## Results (v0.2.0)
 
-| Part | Paper section | What the code does |
-|---|---|---|
-| `gaden/neuron.py` | Ch. 2.1 | Hodgkin-Huxley neuron with the paper's rate constants. Shows rest, firing, and depolarization block at high current. |
-| `gaden/pomc.py` | Ch. 2.2 | The POMC burst waveform: 30 Hz, 500 ms bursts every 1.5 s, 150 µs biphasic pulses, 25 µA. |
-| `gaden/control.py` | Ch. 3 | Two-population state model and a PI controller with actuator limits and anti-windup. Targets: AgRP < 2 Hz, POMC ≈ 8 Hz. |
-| `python -m gaden demo` | — | Makes 2 charts and `out/report.json`, plus a 200-run stress test. |
+All numbers come from `cargo run --release --bin metrics`, which writes [`metrics.json`](metrics.json).
+
+| Metric | Value |
+|---|---|
+| AgRP peak, nominal day, closed loop (PID) | **1.04 Hz** (open loop: 30.0 Hz) |
+| Stress suite pass rate (best controller, PID) | **82.9%** of 240 scenarios |
+| Controllers benchmarked | 3 (PID, MPC, bandit) + open loop |
+| Fit to published values, relative RMSE | **0.012** in sample; **0.55** leave-one-out |
+| Tests | 178 Rust, all passing (+ 7 Python) |
+| Line coverage (library) | 97.1% |
+| Rust lines (non-blank) | 3,259 |
+
+### Controller benchmark (240 scenarios each)
+
+| Controller | Pass | Worst AgRP | Mean time AgRP < 2 Hz | Mean AgRP current |
+|---|---|---|---|---|
+| PID | 82.9% | 17.5 Hz | 95.9% | 15.9 µA |
+| MPC | 82.5% | 17.5 Hz | 95.9% | 15.9 µA |
+| Bandit (PI gains) | 81.7% | 17.9 Hz | 95.1% | 20.3 µA |
+| Open loop | 0.0% | 46.0 Hz | 25.1% | 0 µA |
+
+PID and MPC are almost equal. Both fail in the same scenarios: the AgRP drive is higher than the 40 µA limit can cancel at the plant gain of that scenario. A better algorithm cannot fix that; only a higher current limit or a second actuator can. The bandit explores high-gain arms and overshoots, so it uses more current and passes less.
+
+### Pass rate by scenario type (PID)
+
+| Type | Pass |
+|---|---|
+| Nominal | 2 / 2 |
+| GLP-1 dose (8 h sleep, standard meals) | 10 / 10 |
+| Sleep loss (standard meals) | 13 / 18 |
+| Fasting (skip breakfast, skip lunch, 24-h fast) | 69 / 90 |
+| Binge (big dinner, night binge, grazing, big breakfast) | 105 / 120 |
+
+Run `cargo run --release --example failures` to list every failed scenario.
+
+## Methods
+
+### Hormone model (`rust/src/hormones.rs`)
+- **State:** ghrelin, leptin, insulin, GLP-1, glucose, stomach and gut carbohydrate, GLP-1 agonist depot and plasma level.
+- **Circadian timing:** leptin follows a 24-h shape with a first and second harmonic. Ghrelin between meals is in phase with leptin.
+- **Meals:** carbohydrate moves from stomach to gut to blood. GLP-1 rises as the stomach empties. Insulin rises with glucose, plus an incretin term from GLP-1.
+- **Ghrelin:** rises with time since the last meal. Nutrients in the gut suppress it.
+- **Sleep loss:** lowers leptin and raises ghrelin. The size comes from the fit (Spiegel 2004).
+- **GLP-1 agonist:** first-order absorption and clearance. These rates are assumptions.
+- **Neural drive:** ghrelin excites AgRP; leptin, insulin and GLP-1 inhibit it. Leptin and GLP-1 excite POMC. The ghrelin weight is calibrated so that the open-loop nominal day peaks at 30 Hz, the v0.1 scale. The other weights are assumptions.
+
+### Plant and pass rule (`rust/src/sim.rs`)
+- The plant is the v0.1 two-population first-order model (τ = 5 s, current limits 40 µA AgRP and 25 µA POMC).
+- One run = a 24-h warm-up day (hormones only) + a 24-h closed-loop day at 1 s steps.
+- **Pass:** AgRP < 2 Hz for ≥ 95% of the day, POMC mean within 1 Hz of 8 Hz, all states finite and bounded.
+
+### Stress suite
+8 meal patterns × 5 sleep levels (10, 8, 6, 4, 0 h) × 6 dose regimes (none, 1×, 2×, start, stop, double) = **240 scenarios**. Each scenario has a seeded plant-gain error from 0.7 to 1.3 per channel and 0.3 Hz sensor noise.
+
+### Controllers (`rust/src/controllers.rs`)
+- **PID:** derivative on measurement, conditional-integration anti-windup.
+- **MPC:** first-order internal model with a disturbance estimate (offset-free). The input is constant over a 20-step horizon, so the optimum has a closed form. The result is clamped to the limits.
+- **Bandit:** epsilon-greedy (ε = 0.1) over 5 PI gain multipliers (0.5× to 2×). It scores each 60-s window by mean squared error. This is a minimal reinforcement-learning baseline, not a deep RL agent.
+
+### Data fit (`rust/src/fit.rs`, `data/`)
+- 9 published summary values from 4 PubMed abstracts (Cummings 2001, Sinha 1996, Elliott 1993, Spiegel 2004). The exact quotes and citations are in [`data/SOURCES.md`](data/SOURCES.md).
+- Nelder-Mead fits 9 parameters, starting from hand-set prior values. Residuals are relative to each target. Clock times use circular differences.
+- Per-target results: [`data/fit_result.json`](data/fit_result.json).
+
+## Limitations — read these
+
+- **Summary values, not time series.** No figure was digitized. The fit uses 9 numbers from abstracts.
+- **The fit is exactly determined.** 9 free parameters against 9 targets, so a small in-sample error is expected and proves little. The leave-one-out error (0.55) is the honest number. It shows the model does **not** predict a held-out value well.
+- **No AgRP or POMC data.** The coupling from hormones to firing rate is an assumption, calibrated only to the v0.1 30 Hz scale.
+- **Unfitted parts:** glucose and insulin kinetics, agonist pharmacokinetics and most time constants are assumptions.
+- **Interpretation choices:** the Sinha "amplitude", the meal clock times and the sleep mapping are listed in `data/SOURCES.md`.
+- **Toy plant.** First order, one time constant. Real hypothalamic dynamics are not known here.
+- **Stability:** tests check the linearised PI loop and bounded-input / bounded-output behaviour by random sampling. This is not a formal proof (the paper's Lyapunov proof is not reproduced).
+- Chapter 4 of the paper (electrochemistry, tissue safety) is not modelled.
 
 ## Run it
 
 ```bash
-pip install numpy matplotlib pytest
-python -m pytest -q          # 7 Python tests
-python -m gaden demo         # charts + report in ./out
-cd rust && cargo test        # Rust port + parity with Python
+cd rust
+cargo test --release                          # 178 tests
+cargo run --release --bin metrics             # writes ../metrics.json (runs tests + coverage)
+cargo run --release --bin metrics -- --no-cov # faster; skips cargo-llvm-cov
+cargo run --release --example failures        # failed scenarios per controller
 ```
 
-## Rust port (pyCrust)
-Every module also exists in Rust, in [`rust/`](rust/), with no dependencies. Python is the reference; Rust mirrors it.
+Python reference (v0.1):
 
-| Python | Rust |
+```bash
+pip install numpy matplotlib pytest
+python -m pytest -q
+python -m gaden demo
+```
+
+## Layout
+
+| Path | What it is |
 |---|---|
-| `gaden/neuron.py` | `rust/src/neuron.rs` |
-| `gaden/pomc.py` | `rust/src/pomc.rs` |
-| `gaden/control.py` | `rust/src/control.rs` |
+| `rust/src/hormones.rs` | Multi-hormone model with circadian timing |
+| `rust/src/controllers.rs` | PID, MPC, bandit |
+| `rust/src/sim.rs` | 24-h closed loop, 240-scenario suite, calibration |
+| `rust/src/fit.rs` | Fit and leave-one-out check |
+| `rust/src/bin/metrics.rs` | Writes `metrics.json` |
+| `rust/src/{neuron,pomc,control}.rs` | v0.1 Rust port, parity-tested against Python |
+| `gaden/` | v0.1 Python reference |
+| `data/` | Cited targets, sources, fit result |
 
-Parity, measured against [`rust/tests/fixtures/parity.json`](rust/tests/fixtures/parity.json) (written by the Python code):
-- Neuron at 6 currents (0–300 µA/cm²): same spike counts, same block verdicts, voltage samples equal within 1e-9.
-- POMC waveform: same pulse times in 3 s, same envelope, same charge (3.75 nC) and duty cycle.
-- Controller, 4 noise-free scenarios (closed and open loop, ±30% gain error, 60 Hz hunger peak): same trajectories and metrics within 1e-9.
-- Same eigenvalues (real part −0.13, stable).
-
-Sensor noise uses a small built-in generator in Rust, not numpy's, so noisy runs differ run for run; the Rust stress test still requires a pass rate above 85%.
-
-## Results (v0.1.0, seed fixed)
-
-| Check | Result |
-|---|---|
-| Neuron at rest (0 µA/cm²) | 0 spikes |
-| Neuron at 20 µA/cm² | 25 spikes in 300 ms |
-| Neuron at 300 µA/cm² | blocked: 1 spike, then held at about −34 mV (paper predicts about −35 mV) |
-| Hunger surge, no controller | AgRP peaks at 29.7 Hz |
-| Hunger surge, closed loop | AgRP max 1.5 Hz, below 2 Hz 100% of the time; POMC mean 8.0 Hz |
-| Linear stability | all eigenvalues have real part −0.13 (stable) |
-| Stress test (200 runs: ±30% model error, hunger peak 20–40 Hz, sensor noise) | **92% pass.** Failures: the 40 µA limit is too low when hunger is high and the model gain is low (worst AgRP 10.4 Hz). |
-
-## Honest gaps
-
-- The neuron uses squid-axon conductances. The paper gives no AgRP-specific values.
-- The two-population plant is a toy (first order, made-up time constant and gains). Real hypothalamic dynamics are unknown here.
-- The paper's Lyapunov proof (Ch. 3.2) is not reproduced; the demo checks stability of the linear loop only.
-- Chapter 4 (electrochemistry, safety) is not modeled. A real implant needs tissue-safety charge limits, regulatory approval and clinical trials.
-
-## Next steps
-
-1. Fit the plant to published AgRP/POMC firing data.
-2. Add a Kalman filter for the LFP-based state estimate.
-3. Model charge-density safety limits (Shannon criterion).
+See [`CHANGELOG.md`](CHANGELOG.md).
