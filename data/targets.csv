@@ -1,0 +1,10 @@
+id,quantity,value,unit,scale,kind,source,quote
+ghr_ratio,ghrelin pre-meal peak / post-meal trough,2.0,ratio,2.0,point,cummings2001,"Plasma ghrelin levels increased nearly twofold immediately before each meal"
+ghr_trough,ghrelin time from meal start to trough,60,min,60,upper_bound,cummings2001,"fell to trough levels within 1 h after eating"
+lep_zenith,leptin zenith clock time,1.0,h,24,clock,cummings2001,"rising throughout the day to a zenith at 0100"
+lep_nadir,leptin nadir clock time,9.0,h,24,clock,cummings2001,"then falling overnight to a nadir at 0900"
+lep_amp,leptin circadian amplitude (acrophase vs nadir) lean,75.6,%,75.6,point,sinha1996,"The average circadian amplitude between acrophase and nadir was 75.6% in lean"
+lep_mean,leptin 24-h mean lean,12.0,ng/ml,12.0,point,sinha1996,"lean controls (12.0 +/- 4.4, n = 6)"
+glp1_tpeak,GLP-1 time to peak after carbohydrate meal,30,min,30,point,elliott1993,"Levels reached a maximum 30 min after the carbohydrate"
+sleep_lep,daytime leptin ratio sleep restricted vs extended,0.82,ratio,0.82,point,spiegel2004,"leptin (decrease, 18%; P = 0.04)"
+sleep_ghr,daytime ghrelin ratio sleep restricted vs extended,1.28,ratio,1.28,point,spiegel2004,"ghrelin (increase, 28%; P < 0.04)"
