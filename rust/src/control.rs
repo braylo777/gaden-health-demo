@@ -156,15 +156,15 @@ pub fn metrics(s: &Sim, settle: f64) -> Metrics {
 }
 
 /// Small xorshift + Box-Muller generator (no dependencies). Not the numpy stream.
-struct Rng(u64);
+pub struct Rng(pub u64);
 impl Rng {
-    fn next_f64(&mut self) -> f64 {
+    pub fn next_f64(&mut self) -> f64 {
         self.0 ^= self.0 << 13;
         self.0 ^= self.0 >> 7;
         self.0 ^= self.0 << 17;
         (self.0 >> 11) as f64 / (1u64 << 53) as f64
     }
-    fn normal(&mut self) -> f64 {
+    pub fn normal(&mut self) -> f64 {
         let (u1, u2) = (self.next_f64().max(1e-300), self.next_f64());
         (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
     }
