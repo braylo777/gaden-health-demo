@@ -1,0 +1,14 @@
+{
+  "residuals": [
+    {"id": "ghr_ratio", "target": 2.0000, "model": 1.9872, "rel_residual": -0.0064, "loo_rel_residual": 1.2264, "source": "cummings2001"},
+    {"id": "ghr_trough", "target": 60.0000, "model": 58.0000, "rel_residual": 0.0000, "loo_rel_residual": 0.0000, "source": "cummings2001"},
+    {"id": "lep_zenith", "target": 1.0000, "model": 1.7000, "rel_residual": 0.0292, "loo_rel_residual": 0.0375, "source": "cummings2001"},
+    {"id": "lep_nadir", "target": 9.0000, "model": 9.4667, "rel_residual": 0.0194, "loo_rel_residual": 0.0653, "source": "cummings2001"},
+    {"id": "lep_amp", "target": 75.6000, "model": 75.9973, "rel_residual": 0.0053, "loo_rel_residual": -0.7064, "source": "sinha1996"},
+    {"id": "lep_mean", "target": 12.0000, "model": 11.9761, "rel_residual": -0.0020, "loo_rel_residual": 0.7300, "source": "sinha1996"},
+    {"id": "glp1_tpeak", "target": 30.0000, "model": 30.0000, "rel_residual": 0.0000, "loo_rel_residual": -0.3667, "source": "elliott1993"},
+    {"id": "sleep_lep", "target": 0.8200, "model": 0.8204, "rel_residual": 0.0005, "loo_rel_residual": 0.1000, "source": "spiegel2004"},
+    {"id": "sleep_ghr", "target": 1.2800, "model": 1.2804, "rel_residual": 0.0003, "loo_rel_residual": -0.1835, "source": "spiegel2004"}
+  ],
+  "params": {"lep_mean": 12.7385, "lep_a1": 0.2269, "lep_p1": 21.9083, "lep_a2": 0.1712, "ghr_rise": 0.1453, "ghr_tau_s": 1918.6531, "glp1_tau_s": 2430.8258, "sleep_lep": 0.1796, "sleep_ghr": 0.2804}
+}
