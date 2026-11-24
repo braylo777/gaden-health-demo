@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0 - 2026-11-24
+
+### Added
+- Model terms: PYY, cortisol (circadian and awakening response), cumulative sleep debt, agonist slowing of gastric emptying, circadian misalignment, stress and illness. Sources in `data/SOURCES.md`.
+- Robust MPC (exact minimax over gain 0.7 to 1.3) and a safety filter with hard limits on peak, rise rate and running mean.
+- 1,000 seeded scenarios (shift work, illness, travel, missed meals, sensor noise) with Wilson 95% intervals. `results/metrics.json` carries date, git sha and machine.
+- 496 tests: per-term bound and literature tests, 10,000-trial safety property tests, golden curves, 64 Python parity cases.
+- Paper `docs/HOW-GADEN-WORKS.md` and PDF, 5 SVG figures, browser demo (WebAssembly), Dockerfile, CLI `gaden`.
+- CI: ubuntu and macOS, coverage gate, README-numbers check, claims check, reproduction check, wasm and docker jobs.
+
+### Changed
+- Calibrated `w_ghr` re-derived with the new terms. README numbers are generated from the JSON.
+
+### Known gap
+- The model gives higher postprandial insulin with the agonist. A 2018 trial found lower insulin.
+
 ## 0.2.0 — 2026-11-21
 
 ### Added
