@@ -1,0 +1,10 @@
+{
+  "measured_at": "2026-11-24",
+  "url": "https://gaden-demo.braylo777.workers.dev/",
+  "how": "javascript in headless-capable Chrome: 10 calls of run(controller=5, ...) after load, median of total time divided by 2 simulated days (open-loop reference plus controller)",
+  "median_ms_per_sim_day_safe_rmpc": 31.1,
+  "per_controller_local_ms_per_sim_day": {"pid": 24.9, "mpc": 30.5, "bandit": 28.6, "rmpc": 44.4, "safe_pid": 21.0, "safe_rmpc": 30.9, "open": 8.4},
+  "note": "Measured while other builds were running on the same machine. Before the exact minimax solver the robust MPC took 163 ms per day.",
+  "console_errors": 0,
+  "http_status": 200
+}

@@ -2,7 +2,7 @@
 
 > **Simulation only.** This is a computer model. It is not a medical device. It is not a cure and it makes no health claim. It is not tested in animals or people. Do not use it to make decisions about food, sleep, drugs or treatment.
 
-Numbers in this paper come from `results/metrics.json`. It was made on <!--n:generated_date-->2026-11-24<!--/n--> at commit `<!--n:git_sha-->x<!--/n-->` with `make metrics`. Machine: <!--n:machine-->x<!--/n-->. Every number is a **simulation** result unless the text says it is a published value.
+Numbers in this paper come from `results/metrics.json`. It was made on <!--n:generated_date-->2026-11-24<!--/n--> at commit <!--n:git_sha-->c60d003-dirty<!--/n--> with `make metrics`. Machine: <!--n:machine-->macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro<!--/n-->. Every number is a **simulation** result unless the text says it is a published value.
 
 ## 1. The problem: hunger is a control loop
 
@@ -92,7 +92,7 @@ The terms added in version 1.0 (PYY, cortisol, sleep debt, gastric slowing, misa
 | Term | Literature value | Model value |
 |---|---|---|
 | First-hour gastric emptying, agonist vs none (Hjerpsted 2018) | 0.73 (0.61 to 0.87) | <!--n:gastric_ratio-->0.73<!--/n--> |
-| Postprandial glucose at 12 h misalignment (Morris 2015) | 1.06 | <!--n:misalign_ratio-->1.031<!--/n--> |
+| Postprandial glucose at 12 h misalignment (Morris 2015) | 1.06 | <!--n:misalign_ratio-->1.030<!--/n--> |
 | Cortisol peak after waking (Stalder 2016) | 30 to 45 min | <!--n:car_min-->42<!--/n--> min |
 
 One published result is **not** reproduced. Hjerpsted 2018 found a lower postprandial insulin area with the agonist. The model gives a higher one, because of its incretin term. A test (`lit_insulin_agonist_mismatch_is_known`) marks this gap.
@@ -129,13 +129,13 @@ A day **passes** if AgRP stays below 2 Hz for at least 95% of the day, the POMC 
 
 | Controller | Pass | 95% interval | Worst AgRP | Mean AgRP current |
 |---|---|---|---|---|
-| PID | <!--n:pass_pid-->86.8%<!--/n--> | <!--n:ci_pid-->x<!--/n--> | <!--n:worst_pid-->x<!--/n--> | <!--n:u_pid-->x<!--/n--> |
-| MPC | <!--n:pass_mpc-->83.8%<!--/n--> | <!--n:ci_mpc-->x<!--/n--> | <!--n:worst_mpc-->x<!--/n--> | <!--n:u_mpc-->x<!--/n--> |
-| Robust MPC | <!--n:pass_rmpc-->83.8%<!--/n--> | <!--n:ci_rmpc-->x<!--/n--> | <!--n:worst_rmpc-->x<!--/n--> | <!--n:u_rmpc-->x<!--/n--> |
-| Bandit-tuned PI | <!--n:pass_bandit-->86.1%<!--/n--> | <!--n:ci_bandit-->x<!--/n--> | <!--n:worst_bandit-->x<!--/n--> | <!--n:u_bandit-->x<!--/n--> |
-| PID + safety filter | <!--n:pass_safe_pid-->57.2%<!--/n--> | <!--n:ci_safe_pid-->x<!--/n--> | <!--n:worst_safe_pid-->x<!--/n--> | <!--n:u_safe_pid-->x<!--/n--> |
-| Robust MPC + safety filter | <!--n:pass_safe_rmpc-->54.4%<!--/n--> | <!--n:ci_safe_rmpc-->x<!--/n--> | <!--n:worst_safe_rmpc-->x<!--/n--> | <!--n:u_safe_rmpc-->x<!--/n--> |
-| Open loop | <!--n:pass_open-->0.0%<!--/n--> | <!--n:ci_open-->x<!--/n--> | <!--n:worst_open-->x<!--/n--> | <!--n:u_open-->x<!--/n--> |
+| PID | <!--n:pass_pid-->86.8%<!--/n--> | <!--n:ci_pid-->84.6 to 88.8%<!--/n--> | <!--n:worst_pid-->16.5 Hz<!--/n--> | <!--n:u_pid-->14.5 uA<!--/n--> |
+| MPC | <!--n:pass_mpc-->83.8%<!--/n--> | <!--n:ci_mpc-->81.4 to 86.0%<!--/n--> | <!--n:worst_mpc-->16.5 Hz<!--/n--> | <!--n:u_mpc-->14.5 uA<!--/n--> |
+| Robust MPC | <!--n:pass_rmpc-->83.8%<!--/n--> | <!--n:ci_rmpc-->81.4 to 86.0%<!--/n--> | <!--n:worst_rmpc-->16.5 Hz<!--/n--> | <!--n:u_rmpc-->14.5 uA<!--/n--> |
+| Bandit-tuned PI | <!--n:pass_bandit-->86.1%<!--/n--> | <!--n:ci_bandit-->83.8 to 88.1%<!--/n--> | <!--n:worst_bandit-->17.8 Hz<!--/n--> | <!--n:u_bandit-->19.1 uA<!--/n--> |
+| PID + safety filter | <!--n:pass_safe_pid-->57.2%<!--/n--> | <!--n:ci_safe_pid-->54.1 to 60.2%<!--/n--> | <!--n:worst_safe_pid-->25.4 Hz<!--/n--> | <!--n:u_safe_pid-->13.7 uA<!--/n--> |
+| Robust MPC + safety filter | <!--n:pass_safe_rmpc-->54.4%<!--/n--> | <!--n:ci_safe_rmpc-->51.3 to 57.5%<!--/n--> | <!--n:worst_safe_rmpc-->25.4 Hz<!--/n--> | <!--n:u_safe_rmpc-->13.8 uA<!--/n--> |
+| Open loop | <!--n:pass_open-->0.0%<!--/n--> | <!--n:ci_open-->0.0 to 0.4%<!--/n--> | <!--n:worst_open-->46.4 Hz<!--/n--> | <!--n:u_open-->0.0 uA<!--/n--> |
 
 ![Controller comparison](img/04-controller-comparison.svg)
 
@@ -145,12 +145,12 @@ Pass count by scenario kind (of 200 each):
 
 | Controller | Shift work | Illness | Travel | Missed meals | Sensor noise |
 |---|---|---|---|---|---|
-| PID | <!--n:kind_shift_work_pid-->x<!--/n--> | <!--n:kind_illness_pid-->x<!--/n--> | <!--n:kind_travel_pid-->x<!--/n--> | <!--n:kind_missed_meals_pid-->x<!--/n--> | <!--n:kind_sensor_noise_pid-->x<!--/n--> |
-| MPC | <!--n:kind_shift_work_mpc-->x<!--/n--> | <!--n:kind_illness_mpc-->x<!--/n--> | <!--n:kind_travel_mpc-->x<!--/n--> | <!--n:kind_missed_meals_mpc-->x<!--/n--> | <!--n:kind_sensor_noise_mpc-->x<!--/n--> |
-| Robust MPC | <!--n:kind_shift_work_rmpc-->x<!--/n--> | <!--n:kind_illness_rmpc-->x<!--/n--> | <!--n:kind_travel_rmpc-->x<!--/n--> | <!--n:kind_missed_meals_rmpc-->x<!--/n--> | <!--n:kind_sensor_noise_rmpc-->x<!--/n--> |
-| Bandit-tuned PI | <!--n:kind_shift_work_bandit-->x<!--/n--> | <!--n:kind_illness_bandit-->x<!--/n--> | <!--n:kind_travel_bandit-->x<!--/n--> | <!--n:kind_missed_meals_bandit-->x<!--/n--> | <!--n:kind_sensor_noise_bandit-->x<!--/n--> |
-| PID + safety filter | <!--n:kind_shift_work_safe_pid-->x<!--/n--> | <!--n:kind_illness_safe_pid-->x<!--/n--> | <!--n:kind_travel_safe_pid-->x<!--/n--> | <!--n:kind_missed_meals_safe_pid-->x<!--/n--> | <!--n:kind_sensor_noise_safe_pid-->x<!--/n--> |
-| Robust MPC + safety filter | <!--n:kind_shift_work_safe_rmpc-->x<!--/n--> | <!--n:kind_illness_safe_rmpc-->x<!--/n--> | <!--n:kind_travel_safe_rmpc-->x<!--/n--> | <!--n:kind_missed_meals_safe_rmpc-->x<!--/n--> | <!--n:kind_sensor_noise_safe_rmpc-->x<!--/n--> |
+| PID | <!--n:kind_shift_work_pid-->148/200<!--/n--> | <!--n:kind_illness_pid-->200/200<!--/n--> | <!--n:kind_travel_pid-->152/200<!--/n--> | <!--n:kind_missed_meals_pid-->185/200<!--/n--> | <!--n:kind_sensor_noise_pid-->183/200<!--/n--> |
+| MPC | <!--n:kind_shift_work_mpc-->148/200<!--/n--> | <!--n:kind_illness_mpc-->200/200<!--/n--> | <!--n:kind_travel_mpc-->152/200<!--/n--> | <!--n:kind_missed_meals_mpc-->185/200<!--/n--> | <!--n:kind_sensor_noise_mpc-->153/200<!--/n--> |
+| Robust MPC | <!--n:kind_shift_work_rmpc-->148/200<!--/n--> | <!--n:kind_illness_rmpc-->200/200<!--/n--> | <!--n:kind_travel_rmpc-->152/200<!--/n--> | <!--n:kind_missed_meals_rmpc-->185/200<!--/n--> | <!--n:kind_sensor_noise_rmpc-->153/200<!--/n--> |
+| Bandit-tuned PI | <!--n:kind_shift_work_bandit-->146/200<!--/n--> | <!--n:kind_illness_bandit-->200/200<!--/n--> | <!--n:kind_travel_bandit-->148/200<!--/n--> | <!--n:kind_missed_meals_bandit-->184/200<!--/n--> | <!--n:kind_sensor_noise_bandit-->183/200<!--/n--> |
+| PID + safety filter | <!--n:kind_shift_work_safe_pid-->67/200<!--/n--> | <!--n:kind_illness_safe_pid-->199/200<!--/n--> | <!--n:kind_travel_safe_pid-->77/200<!--/n--> | <!--n:kind_missed_meals_safe_pid-->113/200<!--/n--> | <!--n:kind_sensor_noise_safe_pid-->116/200<!--/n--> |
+| Robust MPC + safety filter | <!--n:kind_shift_work_safe_rmpc-->67/200<!--/n--> | <!--n:kind_illness_safe_rmpc-->199/200<!--/n--> | <!--n:kind_travel_safe_rmpc-->77/200<!--/n--> | <!--n:kind_missed_meals_safe_rmpc-->113/200<!--/n--> | <!--n:kind_sensor_noise_safe_rmpc-->88/200<!--/n--> |
 
 What the numbers say:
 
@@ -188,6 +188,6 @@ sh web/build.sh  # build the browser demo (needs the wasm32 target)
 docker build -t gaden . && docker run --rm gaden
 ```
 
-Line coverage of the library: <!--n:coverage-->97%<!--/n-->. One simulated day takes <!--n:ms_per_day-->15 ms<!--/n--> natively.
+Line coverage of the library: <!--n:coverage-->97.6%<!--/n-->. One simulated day takes <!--n:ms_per_day-->13.8 ms<!--/n--> natively.
 
 Sources for every term are in `data/SOURCES.md`.
