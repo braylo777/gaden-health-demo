@@ -2,7 +2,7 @@
 
 > **Simulation only.** This is a computer model. It is not a medical device. It is not a cure and it makes no health claim. It is not tested in animals or people. Do not use it to make decisions about food, sleep, drugs or treatment.
 
-Numbers in this paper come from `results/metrics.json`. It was made on <!--n:generated_date-->2026-11-24<!--/n--> at commit <!--n:git_sha-->c60d003-dirty<!--/n--> with `make metrics`. Machine: <!--n:machine-->macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro<!--/n-->. Every number is a **simulation** result unless the text says it is a published value.
+Numbers in this paper come from `results/metrics.json`. It was made on <!--n:generated_date-->2026-11-24<!--/n--> at commit <!--n:git_sha-->572896f<!--/n--> with `make metrics`. Machine: <!--n:machine-->macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro<!--/n-->. Every number is a **simulation** result unless the text says it is a published value.
 
 ## 1. The problem: hunger is a control loop
 
@@ -188,6 +188,6 @@ sh web/build.sh  # build the browser demo (needs the wasm32 target)
 docker build -t gaden . && docker run --rm gaden
 ```
 
-Line coverage of the library: <!--n:coverage-->97.6%<!--/n-->. One simulated day takes <!--n:ms_per_day-->13.8 ms<!--/n--> natively.
+Line coverage of the library: <!--n:coverage-->97.6%<!--/n-->. One simulated day takes <!--n:ms_per_day-->12.3 ms<!--/n--> natively.
 
 Sources for every term are in `data/SOURCES.md`.

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-24T20:54:28Z",
-  "git_sha": "c60d003-dirty",
+  "generated_at": "2026-11-24T20:58:00Z",
+  "git_sha": "572896f",
   "machine": "macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro",
   "value": {
     "scenarios": 1000,
@@ -27,7 +27,7 @@
     },
     "agrp_peak_hz": 1.0380,
     "agrp_peak_open_loop_hz": 30.0000,
-    "native_ms_per_sim_day": 13.7598,
+    "native_ms_per_sim_day": 12.2583,
     "anchors": {"gastric_first_hour_ratio": 0.7298, "gastric_first_hour_ratio_lit": 0.73, "misalign_glucose_ratio": 1.0305, "misalign_glucose_ratio_lit": 1.06, "cortisol_car_peak_min": 42.0000, "cortisol_car_peak_min_lit": "30-45"},
     "tests": 496,
     "tests_passing": 496,

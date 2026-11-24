@@ -13,7 +13,7 @@ A simulation of a closed-loop controller for the brain's hunger circuit. It runs
 
 ## Results (v1.0.0)
 
-Measured on <!--n:generated_date-->2026-11-24<!--/n--> with `make metrics` at commit <!--n:git_sha-->c60d003-dirty<!--/n-->, <!--n:machine-->macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro<!--/n-->. All numbers are **simulation** results from [`results/metrics.json`](results/metrics.json). CI checks that this table equals the JSON (`scripts/readme_numbers.py --check`) and that a fresh run reproduces it.
+Measured on <!--n:generated_date-->2026-11-24<!--/n--> with `make metrics` at commit <!--n:git_sha-->572896f<!--/n-->, <!--n:machine-->macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro<!--/n-->. All numbers are **simulation** results from [`results/metrics.json`](results/metrics.json). CI checks that this table equals the JSON (`scripts/readme_numbers.py --check`) and that a fresh run reproduces it.
 
 | Metric | Value |
 |---|---|
@@ -25,7 +25,7 @@ Measured on <!--n:generated_date-->2026-11-24<!--/n--> with `make metrics` at co
 | Tests | **<!--n:tests-->496<!--/n-->**, all passing (+ 7 Python) |
 | Line coverage (library) | <!--n:coverage-->97.6%<!--/n--> |
 | Fit to published values, relative RMSE | <!--n:fit_rmse-->0.012<!--/n--> in sample; **<!--n:fit_loo-->0.55<!--/n-->** leave-one-out |
-| Time per simulated day (native) | <!--n:ms_per_day-->13.8 ms<!--/n--> |
+| Time per simulated day (native) | <!--n:ms_per_day-->12.3 ms<!--/n--> |
 
 A day **passes** if AgRP stays below 2 Hz for at least 95% of the day, the POMC mean is within 1 Hz of 8 Hz, and all states are finite and bounded.
 
