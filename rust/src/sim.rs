@@ -3,7 +3,7 @@
 
 use crate::control::{Plant, Rng};
 use crate::controllers::Controller;
-use crate::hormones::{self, Coupling, Day, Dose, Meal, Params, State, HOUR};
+use crate::hormones::{self, Coupling, Day, Dose, Ext, Meal, Params, State, HOUR};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Scenario {
@@ -16,6 +16,8 @@ pub struct Scenario {
     pub gain_err: [f64; 2],
     pub noise: f64,
     pub seed: u64,
+    /// circadian displacement, stress, illness (both days)
+    pub ext: Ext,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -60,7 +62,7 @@ pub fn run_day(
     for k in 0..n_w {
         let h = k as f64 * wdt / HOUR;
         hormones::apply_events(&mut s, &sc.warm, h, wdt);
-        hormones::step(&mut s, p, h, wdt, sc.warm.sleep_h);
+        hormones::step_ext(&mut s, p, h, wdt, sc.warm.sleep_h, &sc.ext);
     }
     let plant = Plant::default();
     let g = [
@@ -91,7 +93,7 @@ pub fn run_day(
         let t = k as f64 * DT;
         let h = 24.0 + t / HOUR;
         hormones::apply_events(&mut s, &sc.day, h, DT);
-        hormones::step(&mut s, p, h, DT, sc.day.sleep_h);
+        hormones::step_ext(&mut s, p, h, DT, sc.day.sleep_h, &sc.ext);
         let d = hormones::neural_drive(&s, p, c);
         let y = [
             x[0] + sc.noise * rng.normal(),
@@ -236,6 +238,7 @@ pub fn suite() -> Vec<Scenario> {
                     gain_err: ge,
                     noise: 0.3,
                     seed,
+                    ext: Ext::default(),
                 });
             }
         }
@@ -253,6 +256,7 @@ pub fn nominal() -> Scenario {
         gain_err: [1.0, 1.0],
         noise: 0.0,
         seed: 1,
+        ext: Ext::default(),
     }
 }
 
@@ -332,4 +336,189 @@ pub fn calibrate_coupling(p: &Params, base: &Coupling, peak_hz: f64) -> Coupling
         w_ghr: 0.5 * (lo + hi),
         ..base.clone()
     }
+}
+
+// ---------------------------------------------------------------- 1,000-scenario stress suite
+
+/// Number of scenarios in the v1.0 suite.
+pub const N_STRESS: usize = 1000;
+/// Seed of the scenario generator. The suite is fully determined by this seed.
+pub const STRESS_SEED: u64 = 0x6AD3_2026;
+
+pub const STRESS_KINDS: [&str; 5] = [
+    "shift_work",
+    "illness",
+    "travel",
+    "missed_meals",
+    "sensor_noise",
+];
+
+fn uni(r: &mut Rng, lo: f64, hi: f64) -> f64 {
+    lo + (hi - lo) * r.next_f64()
+}
+
+fn shifted(meals: &[Meal], by_h: f64) -> Vec<Meal> {
+    meals
+        .iter()
+        .map(|m| Meal {
+            at_h: (m.at_h + by_h).rem_euclid(24.0),
+            carbs_g: m.carbs_g,
+        })
+        .collect()
+}
+
+/// One random scenario of the given kind (index into [`STRESS_KINDS`]).
+pub fn stress_scenario(kind: usize, idx: usize, r: &mut Rng) -> Scenario {
+    let std = Day::standard().meals;
+    let mut meals = std.clone();
+    let mut sleep_h = uni(r, 6.0, 9.0);
+    let mut ext = Ext::default();
+    let mut noise = 0.3;
+    match kind {
+        0 => {
+            // shift work: meals and sleep move toward night; the body clock follows only in part
+            let by = uni(r, 8.0, 14.0);
+            meals = shifted(&std, by);
+            sleep_h = uni(r, 4.0, 7.0);
+            ext.circ_shift_h = by * uni(r, 0.4, 0.9) * if by > 12.0 { -1.0 } else { 1.0 };
+            ext.stress = uni(r, 0.0, 0.4);
+        }
+        1 => {
+            // illness: stress and illness raise cortisol and lower the ghrelin target
+            ext.illness = uni(r, 0.3, 1.0);
+            ext.stress = uni(r, 0.2, 0.8);
+            sleep_h = uni(r, 5.0, 10.0);
+            if r.next_f64() < 0.5 {
+                meals.remove((r.next_f64() * meals.len() as f64) as usize % meals.len());
+            }
+        }
+        2 => {
+            // travel: time-zone shift of 3 to 9 h, east (+) or west (-)
+            let z = uni(r, 3.0, 9.0);
+            ext.circ_shift_h = if r.next_f64() < 0.5 { z } else { -z };
+            sleep_h = uni(r, 4.0, 8.0);
+            meals = shifted(&std, uni(r, -2.0, 2.0));
+        }
+        3 => {
+            // missed meals: drop 1 to 3 meals, or a full fast; the next meal may be larger
+            if r.next_f64() < 0.12 {
+                meals.clear();
+            } else {
+                let drop = 1 + (r.next_f64() * 2.0) as usize;
+                for _ in 0..drop.min(meals.len().saturating_sub(1)) {
+                    let k = (r.next_f64() * meals.len() as f64) as usize % meals.len();
+                    meals.remove(k);
+                }
+                if r.next_f64() < 0.5 {
+                    if let Some(m) = meals.last_mut() {
+                        m.carbs_g *= uni(r, 1.2, 2.0);
+                    }
+                }
+            }
+        }
+        _ => {
+            // sensor noise from 0.5 to 2 Hz (log-uniform)
+            noise = (0.5f64.ln() + (2.0f64.ln() - 0.5f64.ln()) * r.next_f64()).exp();
+            meals = shifted(&std, uni(r, -1.0, 1.0));
+        }
+    }
+    let dose: Vec<Dose> = if r.next_f64() < 0.3 {
+        vec![Dose {
+            at_h: 8.0,
+            units: uni(r, 0.5, 2.0),
+        }]
+    } else {
+        vec![]
+    };
+    let ge = [uni(r, 0.7, 1.3), uni(r, 0.7, 1.3)];
+    Scenario {
+        name: format!("{}/{:04}", STRESS_KINDS[kind], idx),
+        category: STRESS_KINDS[kind],
+        warm: Day {
+            meals: meals.clone(),
+            doses: dose.clone(),
+            sleep_h: 8.0,
+        },
+        day: Day {
+            meals,
+            doses: dose,
+            sleep_h,
+        },
+        gain_err: ge,
+        noise,
+        seed: idx as u64 + 1,
+        ext,
+    }
+}
+
+/// `n` seeded scenarios, spread evenly over the five kinds. Same `(n, seed)` gives the same list.
+pub fn stress_suite(n: usize, seed: u64) -> Vec<Scenario> {
+    let mut r = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
+    (0..n)
+        .map(|i| stress_scenario(i % STRESS_KINDS.len(), i, &mut r))
+        .collect()
+}
+
+/// The v1.0 suite: [`N_STRESS`] scenarios.
+pub fn suite_1000() -> Vec<Scenario> {
+    stress_suite(N_STRESS, STRESS_SEED)
+}
+
+/// Wilson 95% interval for a proportion `k / n`. Returns (low, high).
+pub fn wilson_ci(k: usize, n: usize) -> (f64, f64) {
+    if n == 0 {
+        return (0.0, 1.0);
+    }
+    let (z, n_f, p) = (1.959_963_984_540_054, n as f64, k as f64 / n as f64);
+    let den = 1.0 + z * z / n_f;
+    let centre = (p + z * z / (2.0 * n_f)) / den;
+    let half = z * (p * (1.0 - p) / n_f + z * z / (4.0 * n_f * n_f)).sqrt() / den;
+    ((centre - half).max(0.0), (centre + half).min(1.0))
+}
+
+/// Per-scenario outcome kept by the parallel runner.
+#[derive(Clone, Debug)]
+pub struct Outcome {
+    pub passed: bool,
+    pub kind: &'static str,
+    pub result: DayResult,
+}
+
+/// Run one controller over all scenarios on `threads` threads. Order of the result = order of input.
+pub fn run_suite_par(
+    name: &str,
+    scenarios: &[Scenario],
+    p: &Params,
+    c: &Coupling,
+    threads: usize,
+) -> Vec<Outcome> {
+    let threads = threads.max(1).min(scenarios.len().max(1));
+    let chunk = scenarios.len().div_ceil(threads).max(1);
+    let mut out: Vec<Vec<Outcome>> = vec![];
+    std::thread::scope(|sc| {
+        let hs: Vec<_> = scenarios
+            .chunks(chunk)
+            .map(|part| {
+                sc.spawn(move || {
+                    part.iter()
+                        .map(|s| {
+                            let r = match crate::controllers::by_name(name, s.seed) {
+                                Some(mut cc) => run_day(s, Some(cc.as_mut()), p, c),
+                                None => run_day(s, None, p, c),
+                            };
+                            Outcome {
+                                passed: r.pass(),
+                                kind: s.category,
+                                result: r,
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
+        for h in hs {
+            out.push(h.join().expect("worker thread"));
+        }
+    });
+    out.into_iter().flatten().collect()
 }

@@ -96,6 +96,7 @@ fn prop_closed_loop_bounded_random_scenarios() {
             gain_err: [uni(&mut r, 0.5, 1.5), uni(&mut r, 0.5, 1.5)],
             noise: uni(&mut r, 0.0, 1.0),
             seed: case,
+            ext: Default::default(),
         };
         let name = controllers::NAMES[case as usize % 3];
         let mut k = controllers::by_name(name, case).unwrap();

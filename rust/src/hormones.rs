@@ -1,4 +1,5 @@
-//! Multi-hormone appetite model: ghrelin, leptin, insulin, GLP-1, glucose, with circadian timing.
+//! Multi-hormone appetite model: ghrelin, leptin, insulin, GLP-1, PYY, cortisol, glucose,
+//! gastric emptying and cumulative sleep debt, with circadian timing.
 //!
 //! Time unit: seconds. Clock hour = (t / 3600 + start_hour) mod 24.
 //! Every rate below is a model assumption unless `fit.rs` fits it to `data/targets.csv`.
@@ -62,6 +63,30 @@ pub struct Params {
     pub drug_ka: f64,
     pub drug_tau_s: f64,
     pub drug_pmol_per_unit: f64,
+    /// agonist slows gastric emptying: k_empt / (1 + drug_empt_slow * plasma units)
+    pub drug_empt_slow: f64,
+    // PYY (pmol/l): rises with nutrients in the gut, first-order lag
+    pub pyy_base: f64,
+    pub pyy_gain: f64,
+    pub pyy_tau_s: f64,
+    // cortisol (ug/dl): circadian + awakening response + stress, lifted by sleep debt
+    pub cort_min: f64,
+    pub cort_amp: f64,
+    pub cort_peak_h: f64,
+    pub cort_tau_s: f64,
+    pub car_amp: f64,
+    pub car_delay_h: f64,
+    pub car_width_h: f64,
+    pub cort_stress: f64,
+    pub cort_debt: f64,
+    /// reference level used by the neural coupling (daily mean of the circadian curve)
+    pub cort_ref: f64,
+    // cumulative sleep debt (0..1) relaxes toward the acute severity with this time constant
+    pub debt_tau_s: f64,
+    // circadian misalignment lowers insulin action by this fraction at 12 h of misalignment
+    pub misalign_isens: f64,
+    // illness lowers the ghrelin target by this fraction at illness = 1 (assumption)
+    pub ill_ghr: f64,
 }
 
 impl Params {
@@ -116,6 +141,23 @@ impl Default for Params {
             drug_ka: 1.0 / (6.0 * HOUR),
             drug_tau_s: 24.0 * HOUR,
             drug_pmol_per_unit: 20.0,
+            drug_empt_slow: 0.9,
+            pyy_base: 12.0,
+            pyy_gain: 1.2,
+            pyy_tau_s: 30.0 * 60.0,
+            cort_min: 2.0,
+            cort_amp: 12.0,
+            cort_peak_h: 8.0,
+            cort_tau_s: 20.0 * 60.0,
+            car_amp: 4.0,
+            car_delay_h: 0.6,
+            car_width_h: 0.3,
+            cort_stress: 0.6,
+            cort_debt: 0.35,
+            cort_ref: 7.5,
+            debt_tau_s: 36.0 * HOUR,
+            misalign_isens: 0.3,
+            ill_ghr: 0.35,
         }
     }
 }
@@ -135,6 +177,12 @@ pub struct State {
     pub drug: f64,
     /// seconds since the last meal started (for the anticipatory ghrelin rise)
     pub since_meal: f64,
+    /// PYY, pmol/l
+    pub pyy: f64,
+    /// cortisol, ug/dl
+    pub cortisol: f64,
+    /// cumulative sleep debt, 0 (none) to 1 (4 h or less in bed, sustained)
+    pub debt: f64,
 }
 
 impl State {
@@ -150,9 +198,12 @@ impl State {
             depot: 0.0,
             drug: 0.0,
             since_meal: 4.0 * HOUR,
+            pyy: p.pyy_base,
+            cortisol: p.cort_ref,
+            debt: 0.0,
         }
     }
-    pub fn as_array(&self) -> [f64; 10] {
+    pub fn as_array(&self) -> [f64; 13] {
         [
             self.ghrelin,
             self.leptin,
@@ -164,6 +215,9 @@ impl State {
             self.depot,
             self.drug,
             self.since_meal,
+            self.pyy,
+            self.cortisol,
+            self.debt,
         ]
     }
     pub fn is_finite(&self) -> bool {
@@ -217,35 +271,99 @@ impl Day {
     }
 }
 
+/// Extra conditions for one day: circadian displacement, stress and illness.
+/// `Ext::default()` is the plain model (no displacement, no stress, no illness).
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub struct Ext {
+    /// hours the internal clock lags the behavioural clock (travel, shift work); may be negative
+    pub circ_shift_h: f64,
+    /// psychological or physical stress, 0..1
+    pub stress: f64,
+    /// illness severity, 0..1
+    pub illness: f64,
+}
+
+impl Ext {
+    pub fn clamped(&self) -> Ext {
+        Ext {
+            circ_shift_h: self.circ_shift_h.clamp(-12.0, 12.0),
+            stress: self.stress.clamp(0.0, 1.0),
+            illness: self.illness.clamp(0.0, 1.0),
+        }
+    }
+    /// Misalignment between internal and behavioural clock, 0 (aligned) to 1 (12 h apart).
+    pub fn misalignment(&self) -> f64 {
+        (self.circ_shift_h.abs() / 12.0).clamp(0.0, 1.0)
+    }
+}
+
+/// Cortisol target (ug/dl) at clock hour `h`: circadian curve + awakening response + stress.
+pub fn cortisol_target(p: &Params, h: f64, sleep_h: f64, debt: f64, e: &Ext) -> f64 {
+    let w = 2.0 * PI / 24.0;
+    let hc = h.rem_euclid(24.0);
+    // circadian part follows the internal clock, in [0, 1], peak at cort_peak_h
+    let circ = 0.5 * (1.0 + (w * (hc - e.circ_shift_h - p.cort_peak_h)).cos());
+    let circ = circ * circ; // sharper peak, long flat trough
+                            // awakening response follows the behavioural clock (wake time = 23:00 + sleep hours)
+    let wake = (23.0 + sleep_h).rem_euclid(24.0);
+    let mut dh = (hc - wake - p.car_delay_h).rem_euclid(24.0);
+    if dh > 12.0 {
+        dh -= 24.0;
+    }
+    let car_on = (sleep_h / 6.0).clamp(0.0, 1.0);
+    let car = p.car_amp * car_on * (-0.5 * (dh / p.car_width_h).powi(2)).exp();
+    let base = p.cort_min * (1.0 + p.cort_debt * debt) + p.cort_amp * circ + car;
+    let up = 1.0 + p.cort_stress * e.stress + 0.5 * p.cort_stress * e.illness;
+    base * up
+}
+
 /// One Euler step of the hormone model over `dt` seconds at absolute clock hour `h`.
 /// Meals and doses are impulses applied by the caller via `eat` and `inject`.
 pub fn step(s: &mut State, p: &Params, h: f64, dt: f64, sleep_h: f64) {
-    let debt = sleep_debt(sleep_h);
+    step_ext(s, p, h, dt, sleep_h, &Ext::default());
+}
+
+/// Like [`step`], with circadian displacement, stress and illness.
+pub fn step_ext(s: &mut State, p: &Params, h: f64, dt: f64, sleep_h: f64, ext: &Ext) {
+    let e = ext.clamped();
+    let acute = sleep_debt(sleep_h);
+    let debt = acute; // acute severity drives leptin and ghrelin (fit to Spiegel 2004)
     let hc = h.rem_euclid(24.0);
-    // gut: stomach -> gut -> absorbed
-    let empt = p.gastric_k * s.stomach;
+    let hcirc = (hc - e.circ_shift_h).rem_euclid(24.0);
+    // gut: stomach -> gut -> absorbed. The agonist slows gastric emptying.
+    let empt = p.gastric_k * s.stomach / (1.0 + p.drug_empt_slow * s.drug);
     let absorb = p.gut_k * s.gut;
     // leptin: slow relaxation toward circadian target, lowered by sleep loss
-    let lep_t = p.lep_mean * leptin_shape(p, hc) * (1.0 - p.sleep_lep * debt);
+    let lep_t = p.lep_mean * leptin_shape(p, hcirc) * (1.0 - p.sleep_lep * debt);
     // ghrelin: anticipatory rise with time since meal, suppressed by nutrients in the gut,
-    // in phase with leptin (Cummings 2001), raised by sleep loss
+    // in phase with leptin (Cummings 2001), raised by sleep loss, lowered by illness
     let fast = 1.0 - (-s.since_meal / p.ghr_fast_tau_s).exp();
-    let circ = 1.0 + p.ghr_circ * (leptin_shape(p, hc) - 1.0) / p.lep_a1.max(1e-6);
+    let circ = 1.0 + p.ghr_circ * (leptin_shape(p, hcirc) - 1.0) / p.lep_a1.max(1e-6);
     let nutr = (s.stomach + s.gut) / 50.0;
-    let ghr_t = p.ghr_base * circ * (1.0 + p.ghr_rise * fast) * (1.0 + p.sleep_ghr * debt)
+    let ghr_t = p.ghr_base
+        * circ
+        * (1.0 + p.ghr_rise * fast)
+        * (1.0 + p.sleep_ghr * debt)
+        * (1.0 - p.ill_ghr * e.illness)
         / (1.0 + p.ghr_supp * nutr);
     // GLP-1 secreted as gastric contents reach the gut
     let glp_t = p.glp1_base + p.glp1_gain * empt;
-    // glucose and insulin (minimal model, incretin effect of total GLP-1 signal)
+    // PYY follows nutrients in the gut
+    let pyy_t = p.pyy_base + p.pyy_gain * s.gut;
+    // glucose and insulin (minimal model, incretin effect of total GLP-1 signal);
+    // misalignment lowers insulin action (Morris 2015)
     let ins_ex = (s.insulin - p.ins_base).max(0.0);
+    let isens = 1.0 - p.misalign_isens * e.misalignment();
     let dglu = p.glu_gain * absorb
         - p.glu_k * (s.glucose - p.glu_base)
-        - p.ins_glu_effect * ins_ex * (s.glucose / p.glu_base) / 60.0;
+        - isens * p.ins_glu_effect * ins_ex * (s.glucose / p.glu_base) / 60.0;
     let glp_sig = s.glp1_total(p) - p.glp1_base;
     let ins_t = p.ins_base
         + p.ins_gain
             * (s.glucose - p.glu_base).max(0.0)
             * (1.0 + p.ins_incretin * glp_sig.max(0.0));
+    // cortisol
+    let cort_t = cortisol_target(p, hc, sleep_h, s.debt, &e);
     // drug PK
     let rel = p.drug_ka * s.depot;
 
@@ -254,6 +372,9 @@ pub fn step(s: &mut State, p: &Params, h: f64, dt: f64, sleep_h: f64) {
     s.leptin += dt * (lep_t - s.leptin) / p.lep_tau_s;
     s.ghrelin += dt * (ghr_t - s.ghrelin) / p.ghr_tau_s;
     s.glp1 += dt * (glp_t - s.glp1) / p.glp1_tau_s;
+    s.pyy += dt * (pyy_t - s.pyy) / p.pyy_tau_s;
+    s.cortisol += dt * (cort_t - s.cortisol) / p.cort_tau_s;
+    s.debt += dt * (acute - s.debt) / p.debt_tau_s;
     s.glucose = (s.glucose + dt * dglu).max(20.0);
     s.insulin += dt * (ins_t - s.insulin) / p.ins_tau_s;
     s.depot = (s.depot - dt * rel).max(0.0);
@@ -328,19 +449,27 @@ pub struct Coupling {
     pub pomc_rest: f64,
     pub p_lep: f64,
     pub p_glp: f64,
+    /// PYY inhibits AgRP and excites POMC (Hz per pmol/l above basal); assumption
+    pub w_pyy: f64,
+    pub p_pyy: f64,
+    /// cortisol excites AgRP (Hz per ug/dl above the reference); assumption
+    pub w_cort: f64,
 }
 
 impl Default for Coupling {
     fn default() -> Self {
         Coupling {
             agrp_rest: 8.0,
-            w_ghr: 56.46,
+            w_ghr: 58.89,
             w_lep: 6.0,
             w_ins: 0.6,
             w_glp: 0.15,
             pomc_rest: 3.0,
             p_lep: 2.0,
             p_glp: 0.04,
+            w_pyy: 0.08,
+            p_pyy: 0.02,
+            w_cort: 0.25,
         }
     }
 }
@@ -350,7 +479,10 @@ pub fn neural_drive(s: &State, p: &Params, c: &Coupling) -> [f64; 2] {
     let l = s.leptin / p.lep_mean - 1.0;
     let i = s.insulin / p.ins_base - 1.0;
     let glp = s.glp1_total(p) - p.glp1_base;
-    let agrp = c.agrp_rest + c.w_ghr * g - c.w_lep * l - c.w_ins * i - c.w_glp * glp;
-    let pomc = c.pomc_rest + c.p_lep * l + c.p_glp * glp;
+    let py = s.pyy - p.pyy_base;
+    let co = s.cortisol - p.cort_ref;
+    let agrp = c.agrp_rest + c.w_ghr * g - c.w_lep * l - c.w_ins * i - c.w_glp * glp - c.w_pyy * py
+        + c.w_cort * co;
+    let pomc = c.pomc_rest + c.p_lep * l + c.p_glp * glp + c.p_pyy * py;
     [agrp.clamp(0.0, 120.0), pomc.clamp(0.0, 120.0)]
 }

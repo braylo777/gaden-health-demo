@@ -426,8 +426,8 @@ fn finer_step_agrees_with_coarse() {
 }
 
 #[test]
-fn as_array_has_ten_fields() {
-    assert_eq!(State::basal(&Params::default()).as_array().len(), 10);
+fn as_array_has_thirteen_fields() {
+    assert_eq!(State::basal(&Params::default()).as_array().len(), 13);
 }
 
 #[test]

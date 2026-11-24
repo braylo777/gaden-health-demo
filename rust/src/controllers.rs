@@ -117,11 +117,9 @@ impl Mpc {
     }
 }
 
-impl Controller for Mpc {
-    fn name(&self) -> &'static str {
-        "mpc"
-    }
-    fn step(&mut self, y: [f64; 2], dt: f64, u_max: [f64; 2]) -> [f64; 2] {
+impl Mpc {
+    /// Update the disturbance estimate from the last measurement and input.
+    fn update_disturbance(&mut self, y: [f64; 2], dt: f64) {
         if let Some((yp, up)) = self.prev {
             for i in 0..2 {
                 // invert the model: d = tau (x+ - x)/dt + x - g u
@@ -135,6 +133,15 @@ impl Controller for Mpc {
         } else {
             self.d = y;
         }
+    }
+}
+
+impl Controller for Mpc {
+    fn name(&self) -> &'static str {
+        "mpc"
+    }
+    fn step(&mut self, y: [f64; 2], dt: f64, u_max: [f64; 2]) -> [f64; 2] {
+        self.update_disturbance(y, dt);
         let mut u = [0.0; 2];
         for i in 0..2 {
             let raw = self.solve(i, y[i], self.d[i], dt);
@@ -254,13 +261,209 @@ impl Controller for Bandit {
     }
 }
 
+// ---------------------------------------------------------------- Robust MPC
+
+/// Minimax MPC. The plant gain is uncertain by a set of multipliers (default 0.7, 1.0, 1.3,
+/// the range of the stress suite). The input is held constant over the horizon and minimises
+/// the worst-case squared tracking error over that set. The worst case of convex quadratics is
+/// convex in u, so a bounded ternary search finds the optimum.
+#[derive(Clone, Debug)]
+pub struct RobustMpc {
+    pub base: Mpc,
+    pub scales: Vec<f64>,
+}
+
+impl Default for RobustMpc {
+    fn default() -> Self {
+        RobustMpc {
+            base: Mpc::default(),
+            scales: vec![0.7, 1.0, 1.3],
+        }
+    }
+}
+
+impl RobustMpc {
+    /// Worst-case cost coefficients for one channel: returns (s_cc, s_bc, s_bb) at unit scale.
+    fn sums(&self, i: usize, x0: f64, d: f64, dt: f64) -> (f64, f64, f64) {
+        let m = &self.base;
+        let a = (1.0 - dt / m.tau).clamp(0.0, 1.0);
+        let g = m.gain[i];
+        let (mut scc, mut sbc, mut sbb) = (0.0, 0.0, 0.0);
+        let mut ak = 1.0;
+        for _ in 0..m.horizon {
+            ak *= a;
+            let b = g * (1.0 - ak);
+            let c = d * (1.0 - ak) + x0 * ak - m.target[i];
+            scc += c * c;
+            sbc += b * c;
+            sbb += b * b;
+        }
+        (scc, sbc, sbb)
+    }
+
+    /// Worst-case-optimal input for channel `i`, inside [0, u_hi].
+    pub fn solve(&self, i: usize, x0: f64, d: f64, dt: f64, u_hi: f64) -> f64 {
+        let (scc, sbc, sbb) = self.sums(i, x0, d, dt);
+        let lam = self.base.lambda[i];
+        let worst = |u: f64| {
+            self.scales
+                .iter()
+                .map(|&k| scc + 2.0 * k * sbc * u + (k * k * sbb + lam) * u * u)
+                .fold(f64::MIN, f64::max)
+        };
+        let (mut lo, mut hi) = (0.0, u_hi.max(0.0));
+        for _ in 0..40 {
+            let m1 = lo + (hi - lo) / 3.0;
+            let m2 = hi - (hi - lo) / 3.0;
+            if worst(m1) <= worst(m2) {
+                hi = m2;
+            } else {
+                lo = m1;
+            }
+        }
+        0.5 * (lo + hi)
+    }
+}
+
+impl Controller for RobustMpc {
+    fn name(&self) -> &'static str {
+        "rmpc"
+    }
+    fn step(&mut self, y: [f64; 2], dt: f64, u_max: [f64; 2]) -> [f64; 2] {
+        self.base.update_disturbance(y, dt);
+        let mut u = [0.0; 2];
+        for i in 0..2 {
+            let raw = self.solve(i, y[i], self.base.d[i], dt, u_max[i]);
+            u[i] = if raw.is_finite() {
+                raw.clamp(0.0, u_max[i])
+            } else {
+                0.0
+            };
+        }
+        self.base.prev = Some((y, u));
+        u
+    }
+    fn reset(&mut self) {
+        self.base.reset();
+    }
+}
+
+// ---------------------------------------------------------------- Safety filter
+
+/// Hard limits on the stimulation current. They hold for any inner controller, including one
+/// that returns NaN, negative or huge values. These numbers are design assumptions for this
+/// simulation. They are not clinical limits.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SafetyLimits {
+    /// absolute ceiling per channel (uA), applied on top of the device limit `u_max`
+    pub peak: [f64; 2],
+    /// largest allowed rise per second (uA/s). Falls are not rate-limited.
+    pub slew: [f64; 2],
+    /// largest allowed running mean (uA), exponential window of `mean_tau_s`
+    pub mean_limit: [f64; 2],
+    pub mean_tau_s: f64,
+}
+
+impl Default for SafetyLimits {
+    fn default() -> Self {
+        SafetyLimits {
+            peak: [36.0, 22.5],
+            slew: [8.0, 8.0],
+            mean_limit: [20.0, 12.5],
+            mean_tau_s: 3600.0,
+        }
+    }
+}
+
+/// Wraps any controller. Invariants after every step, for every input:
+/// `0 <= u <= min(u_max, peak)`, `u - u_prev <= slew * dt`, and `mean <= mean_limit`.
+pub struct Safe {
+    inner: Box<dyn Controller>,
+    pub limits: SafetyLimits,
+    name: &'static str,
+    last: [f64; 2],
+    mean: [f64; 2],
+}
+
+impl Safe {
+    pub fn new(inner: Box<dyn Controller>, limits: SafetyLimits, name: &'static str) -> Self {
+        Safe {
+            inner,
+            limits,
+            name,
+            last: [0.0; 2],
+            mean: [0.0; 2],
+        }
+    }
+    /// Running mean of the output (uA), per channel.
+    pub fn mean(&self) -> [f64; 2] {
+        self.mean
+    }
+    /// Pure filter: clamp a raw command. Used by `step` and by the property tests.
+    pub fn filter(&mut self, raw: [f64; 2], dt: f64, u_max: [f64; 2]) -> [f64; 2] {
+        let alpha = if self.limits.mean_tau_s > 0.0 && dt.is_finite() && dt > 0.0 {
+            1.0 - (-dt / self.limits.mean_tau_s).exp()
+        } else {
+            1.0
+        };
+        let dt_ok = if dt.is_finite() && dt > 0.0 { dt } else { 0.0 };
+        let mut u = [0.0; 2];
+        for i in 0..2 {
+            let mut v = if raw[i].is_finite() { raw[i] } else { 0.0 };
+            let hi = u_max[i].min(self.limits.peak[i]).max(0.0);
+            v = v.clamp(0.0, hi);
+            v = v.min(self.last[i] + self.limits.slew[i] * dt_ok);
+            // mean budget: mean + alpha (v - mean) <= limit
+            let cap = if alpha > 0.0 {
+                self.mean[i] + (self.limits.mean_limit[i] - self.mean[i]) / alpha
+            } else {
+                f64::MAX
+            };
+            v = v.min(cap).max(0.0);
+            self.mean[i] += alpha * (v - self.mean[i]);
+            self.last[i] = v;
+            u[i] = v;
+        }
+        u
+    }
+}
+
+impl Controller for Safe {
+    fn name(&self) -> &'static str {
+        self.name
+    }
+    fn step(&mut self, y: [f64; 2], dt: f64, u_max: [f64; 2]) -> [f64; 2] {
+        let raw = self.inner.step(y, dt, u_max);
+        self.filter(raw, dt, u_max)
+    }
+    fn reset(&mut self) {
+        self.inner.reset();
+        self.last = [0.0; 2];
+        self.mean = [0.0; 2];
+    }
+}
+
 pub fn by_name(name: &str, seed: u64) -> Option<Box<dyn Controller>> {
     match name {
         "pid" => Some(Box::new(Pid::default())),
         "mpc" => Some(Box::new(Mpc::default())),
         "bandit" => Some(Box::new(Bandit::new(seed))),
+        "rmpc" => Some(Box::new(RobustMpc::default())),
+        "safe_pid" => Some(Box::new(Safe::new(
+            Box::new(Pid::default()),
+            SafetyLimits::default(),
+            "safe_pid",
+        ))),
+        "safe_rmpc" => Some(Box::new(Safe::new(
+            Box::new(RobustMpc::default()),
+            SafetyLimits::default(),
+            "safe_rmpc",
+        ))),
         _ => None,
     }
 }
 
+/// The three v0.2 controllers (kept for the 240-scenario suite).
 pub const NAMES: [&str; 3] = ["pid", "mpc", "bandit"];
+/// Every closed-loop controller in v1.0.
+pub const ALL_NAMES: [&str; 6] = ["pid", "mpc", "bandit", "rmpc", "safe_pid", "safe_rmpc"];
