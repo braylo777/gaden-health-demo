@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-24T20:29:35Z",
-  "git_sha": "31832e3-dirty",
+  "generated_at": "2026-11-24T20:37:19Z",
+  "git_sha": "b32d706-dirty",
   "machine": "macos aarch64, 12 cores, rustc 1.100.0 (0ef1bc386 2026-11-09), Apple M2 Pro",
   "value": {
     "scenarios": 1000,
@@ -9,15 +9,15 @@
     "best_controller": "pid",
     "best_pass": 0.8680,
     "best_safe_controller": "safe_pid",
-    "best_safe_pass": 0.2540,
+    "best_safe_pass": 0.5720,
     "open_pass": 0.0000,
     "controllers": {
       "pid": {"n": 1000, "passed": 868, "pass": 0.8680, "ci95": [0.8456, 0.8876], "worst_agrp_hz": 16.4797, "mean_frac_agrp_below_2hz": 0.9777, "mean_pomc_err_hz": 0.0012, "mean_u_agrp_ua": 14.4629, "by_kind": {"shift_work": {"n": 200, "passed": 148, "pass": 0.7400, "ci95": [0.6751, 0.7959]}, "illness": {"n": 200, "passed": 200, "pass": 1.0000, "ci95": [0.9812, 1.0000]}, "travel": {"n": 200, "passed": 152, "pass": 0.7600, "ci95": [0.6963, 0.8139]}, "missed_meals": {"n": 200, "passed": 185, "pass": 0.9250, "ci95": [0.8800, 0.9540]}, "sensor_noise": {"n": 200, "passed": 183, "pass": 0.9150, "ci95": [0.8681, 0.9463]}}},
       "mpc": {"n": 1000, "passed": 838, "pass": 0.8380, "ci95": [0.8139, 0.8595], "worst_agrp_hz": 16.4797, "mean_frac_agrp_below_2hz": 0.9741, "mean_pomc_err_hz": 0.0045, "mean_u_agrp_ua": 14.4852, "by_kind": {"shift_work": {"n": 200, "passed": 148, "pass": 0.7400, "ci95": [0.6751, 0.7959]}, "illness": {"n": 200, "passed": 200, "pass": 1.0000, "ci95": [0.9812, 1.0000]}, "travel": {"n": 200, "passed": 152, "pass": 0.7600, "ci95": [0.6963, 0.8139]}, "missed_meals": {"n": 200, "passed": 185, "pass": 0.9250, "ci95": [0.8800, 0.9540]}, "sensor_noise": {"n": 200, "passed": 153, "pass": 0.7650, "ci95": [0.7016, 0.8184]}}},
       "bandit": {"n": 1000, "passed": 861, "pass": 0.8610, "ci95": [0.8382, 0.8811], "worst_agrp_hz": 17.8075, "mean_frac_agrp_below_2hz": 0.9694, "mean_pomc_err_hz": 0.0418, "mean_u_agrp_ua": 19.1235, "by_kind": {"shift_work": {"n": 200, "passed": 146, "pass": 0.7300, "ci95": [0.6646, 0.7868]}, "illness": {"n": 200, "passed": 200, "pass": 1.0000, "ci95": [0.9812, 1.0000]}, "travel": {"n": 200, "passed": 148, "pass": 0.7400, "ci95": [0.6751, 0.7959]}, "missed_meals": {"n": 200, "passed": 184, "pass": 0.9200, "ci95": [0.8740, 0.9502]}, "sensor_noise": {"n": 200, "passed": 183, "pass": 0.9150, "ci95": [0.8681, 0.9463]}}},
       "rmpc": {"n": 1000, "passed": 838, "pass": 0.8380, "ci95": [0.8139, 0.8595], "worst_agrp_hz": 16.4797, "mean_frac_agrp_below_2hz": 0.9741, "mean_pomc_err_hz": 0.0041, "mean_u_agrp_ua": 14.4861, "by_kind": {"shift_work": {"n": 200, "passed": 148, "pass": 0.7400, "ci95": [0.6751, 0.7959]}, "illness": {"n": 200, "passed": 200, "pass": 1.0000, "ci95": [0.9812, 1.0000]}, "travel": {"n": 200, "passed": 152, "pass": 0.7600, "ci95": [0.6963, 0.8139]}, "missed_meals": {"n": 200, "passed": 185, "pass": 0.9250, "ci95": [0.8800, 0.9540]}, "sensor_noise": {"n": 200, "passed": 153, "pass": 0.7650, "ci95": [0.7016, 0.8184]}}},
-      "safe_pid": {"n": 1000, "passed": 254, "pass": 0.2540, "ci95": [0.2280, 0.2819], "worst_agrp_hz": 31.4250, "mean_frac_agrp_below_2hz": 0.7514, "mean_pomc_err_hz": 0.0506, "mean_u_agrp_ua": 11.9541, "by_kind": {"shift_work": {"n": 200, "passed": 7, "pass": 0.0350, "ci95": [0.0171, 0.0705]}, "illness": {"n": 200, "passed": 190, "pass": 0.9500, "ci95": [0.9104, 0.9726]}, "travel": {"n": 200, "passed": 15, "pass": 0.0750, "ci95": [0.0460, 0.1200]}, "missed_meals": {"n": 200, "passed": 19, "pass": 0.0950, "ci95": [0.0617, 0.1436]}, "sensor_noise": {"n": 200, "passed": 23, "pass": 0.1150, "ci95": [0.0779, 0.1666]}}},
-      "safe_rmpc": {"n": 1000, "passed": 243, "pass": 0.2430, "ci95": [0.2174, 0.2705], "worst_agrp_hz": 31.4250, "mean_frac_agrp_below_2hz": 0.7487, "mean_pomc_err_hz": 0.0527, "mean_u_agrp_ua": 11.9728, "by_kind": {"shift_work": {"n": 200, "passed": 7, "pass": 0.0350, "ci95": [0.0171, 0.0705]}, "illness": {"n": 200, "passed": 190, "pass": 0.9500, "ci95": [0.9104, 0.9726]}, "travel": {"n": 200, "passed": 15, "pass": 0.0750, "ci95": [0.0460, 0.1200]}, "missed_meals": {"n": 200, "passed": 19, "pass": 0.0950, "ci95": [0.0617, 0.1436]}, "sensor_noise": {"n": 200, "passed": 12, "pass": 0.0600, "ci95": [0.0347, 0.1019]}}},
+      "safe_pid": {"n": 1000, "passed": 572, "pass": 0.5720, "ci95": [0.5411, 0.6023], "worst_agrp_hz": 25.4469, "mean_frac_agrp_below_2hz": 0.9048, "mean_pomc_err_hz": 0.0012, "mean_u_agrp_ua": 13.7394, "by_kind": {"shift_work": {"n": 200, "passed": 67, "pass": 0.3350, "ci95": [0.2732, 0.4030]}, "illness": {"n": 200, "passed": 199, "pass": 0.9950, "ci95": [0.9722, 0.9991]}, "travel": {"n": 200, "passed": 77, "pass": 0.3850, "ci95": [0.3203, 0.4540]}, "missed_meals": {"n": 200, "passed": 113, "pass": 0.5650, "ci95": [0.4957, 0.6318]}, "sensor_noise": {"n": 200, "passed": 116, "pass": 0.5800, "ci95": [0.5107, 0.6463]}}},
+      "safe_rmpc": {"n": 1000, "passed": 544, "pass": 0.5440, "ci95": [0.5130, 0.5746], "worst_agrp_hz": 25.4469, "mean_frac_agrp_below_2hz": 0.9016, "mean_pomc_err_hz": 0.0037, "mean_u_agrp_ua": 13.7625, "by_kind": {"shift_work": {"n": 200, "passed": 67, "pass": 0.3350, "ci95": [0.2732, 0.4030]}, "illness": {"n": 200, "passed": 199, "pass": 0.9950, "ci95": [0.9722, 0.9991]}, "travel": {"n": 200, "passed": 77, "pass": 0.3850, "ci95": [0.3203, 0.4540]}, "missed_meals": {"n": 200, "passed": 113, "pass": 0.5650, "ci95": [0.4957, 0.6318]}, "sensor_noise": {"n": 200, "passed": 88, "pass": 0.4400, "ci95": [0.3730, 0.5093]}}},
       "open": {"n": 1000, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0038], "worst_agrp_hz": 46.3702, "mean_frac_agrp_below_2hz": 0.2764, "mean_pomc_err_hz": 4.7852, "mean_u_agrp_ua": 0.0000, "by_kind": {"shift_work": {"n": 200, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0188]}, "illness": {"n": 200, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0188]}, "travel": {"n": 200, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0188]}, "missed_meals": {"n": 200, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0188]}, "sensor_noise": {"n": 200, "passed": 0, "pass": 0.0000, "ci95": [0.0000, 0.0188]}}}
     },
     "legacy_240": {
@@ -27,11 +27,11 @@
     },
     "agrp_peak_hz": 1.0380,
     "agrp_peak_open_loop_hz": 30.0000,
-    "native_ms_per_sim_day": 13.1718,
+    "native_ms_per_sim_day": 14.9587,
     "anchors": {"gastric_first_hour_ratio": 0.7298, "gastric_first_hour_ratio_lit": 0.73, "misalign_glucose_ratio": 1.0305, "misalign_glucose_ratio_lit": 1.06, "cortisol_car_peak_min": 42.0000, "cortisol_car_peak_min_lit": "30-45"},
-    "tests": null,
-    "tests_passing": null,
-    "loc_rust": 5068,
+    "tests": 492,
+    "tests_passing": 492,
+    "loc_rust": 5335,
     "coverage": null,
     "w_ghr_calibrated": 58.1099,
     "fit_rmse": 0.0120,

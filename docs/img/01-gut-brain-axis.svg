@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" width="900" height="470" role="img" aria-labelledby="t1 d1" font-family="Helvetica, Arial, sans-serif">
+  <title id="t1">Gut to brain: how hunger signals reach the hypothalamus</title>
+  <desc id="d1">Stomach, gut, pancreas and fat send ghrelin, GLP-1, PYY, insulin and leptin to the arcuate nucleus. Some signals travel through the vagus nerve and the brainstem. In the arcuate nucleus, AgRP and NPY neurons drive hunger and POMC neurons drive satiety. The two groups inhibit each other.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#444"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b3261e"/></marker>
+  </defs>
+  <rect width="900" height="470" fill="#ffffff"/>
+  <text x="450" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#111">The gut-brain axis in this model</text>
+  <!-- organs -->
+  <g font-size="13" fill="#111">
+    <rect x="30" y="60" width="170" height="64" rx="10" fill="#fdecc8" stroke="#a66b00"/>
+    <text x="115" y="88" text-anchor="middle" font-weight="700">Stomach</text>
+    <text x="115" y="108" text-anchor="middle">ghrelin rises when empty</text>
+    <rect x="30" y="150" width="170" height="64" rx="10" fill="#dff1e1" stroke="#2e7d32"/>
+    <text x="115" y="178" text-anchor="middle" font-weight="700">Small intestine</text>
+    <text x="115" y="198" text-anchor="middle">GLP-1 and PYY after food</text>
+    <rect x="30" y="240" width="170" height="64" rx="10" fill="#e3ecfa" stroke="#1d4e9e"/>
+    <text x="115" y="268" text-anchor="middle" font-weight="700">Pancreas</text>
+    <text x="115" y="288" text-anchor="middle">insulin follows glucose</text>
+    <rect x="30" y="330" width="170" height="64" rx="10" fill="#f1e6f7" stroke="#6a1b9a"/>
+    <text x="115" y="358" text-anchor="middle" font-weight="700">Fat tissue</text>
+    <text x="115" y="378" text-anchor="middle">leptin, slow 24 h rhythm</text>
+  </g>
+  <!-- vagus and blood -->
+  <rect x="300" y="75" width="150" height="130" rx="10" fill="#f3f3f3" stroke="#555"/>
+  <text x="375" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#111">Vagus nerve</text>
+  <text x="375" y="120" text-anchor="middle" font-size="12" fill="#333">fast gut signals</text>
+  <rect x="320" y="140" width="110" height="50" rx="8" fill="#ffffff" stroke="#555"/>
+  <text x="375" y="161" text-anchor="middle" font-size="12" fill="#111">Brainstem</text>
+  <text x="375" y="178" text-anchor="middle" font-size="12" fill="#111">(NTS)</text>
+  <rect x="300" y="260" width="150" height="90" rx="10" fill="#f3f3f3" stroke="#555"/>
+  <text x="375" y="290" text-anchor="middle" font-size="13" font-weight="700" fill="#111">Blood</text>
+  <text x="375" y="310" text-anchor="middle" font-size="12" fill="#333">hormones in the</text>
+  <text x="375" y="326" text-anchor="middle" font-size="12" fill="#333">circulation</text>
+  <!-- arcuate -->
+  <rect x="540" y="60" width="330" height="340" rx="14" fill="#fafafa" stroke="#333" stroke-width="1.5"/>
+  <text x="705" y="86" text-anchor="middle" font-size="14" font-weight="700" fill="#111">Hypothalamus: arcuate nucleus</text>
+  <rect x="565" y="110" width="130" height="86" rx="10" fill="#fbd9d6" stroke="#b3261e" stroke-width="1.5"/>
+  <text x="630" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="#111">AgRP / NPY</text>
+  <text x="630" y="160" text-anchor="middle" font-size="12" fill="#111">neurons</text>
+  <text x="630" y="180" text-anchor="middle" font-size="12" font-weight="700" fill="#8c1d18">drive hunger</text>
+  <rect x="715" y="110" width="130" height="86" rx="10" fill="#d4ecd6" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="780" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="#111">POMC</text>
+  <text x="780" y="160" text-anchor="middle" font-size="12" fill="#111">neurons</text>
+  <text x="780" y="180" text-anchor="middle" font-size="12" font-weight="700" fill="#1b5e20">drive satiety</text>
+  <path d="M695 140 H715" stroke="#b3261e" stroke-width="2" marker-end="url(#b)"/>
+  <path d="M715 168 H695" stroke="#b3261e" stroke-width="2" marker-end="url(#b)"/>
+  <text x="705" y="216" text-anchor="middle" font-size="11" fill="#8c1d18">each group inhibits the other</text>
+  <!-- model summary inside arcuate -->
+  <g font-size="12" fill="#111">
+    <text x="565" y="250" font-weight="700">What raises AgRP in the model</text>
+    <text x="565" y="270">ghrelin up, cortisol up</text>
+    <text x="565" y="300" font-weight="700">What lowers AgRP in the model</text>
+    <text x="565" y="320">leptin, insulin, GLP-1, PYY</text>
+    <text x="565" y="350" font-weight="700">What raises POMC in the model</text>
+    <text x="565" y="370">leptin, GLP-1, PYY</text>
+  </g>
+  <!-- arrows -->
+  <g stroke="#444" stroke-width="1.8" fill="none" marker-end="url(#a)">
+    <path d="M200 92 H300"/>
+    <path d="M200 182 H300"/>
+    <path d="M200 272 H300"/>
+    <path d="M200 362 H330 V350"/>
+    <path d="M450 165 H540"/>
+    <path d="M450 305 H520 V230 H540"/>
+  </g>
+  <text x="450" y="440" text-anchor="middle" font-size="12" fill="#444">Simulation only. The weights from hormones to firing rate are assumptions. Not a medical device.</text>
+</svg>

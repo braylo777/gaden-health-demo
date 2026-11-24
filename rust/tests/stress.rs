@@ -299,3 +299,47 @@ fn anchors_agree_with_the_literature_windows() {
     let c = gaden::anchors::car_peak_minutes(&p);
     assert!((28.0..=47.0).contains(&c), "car {c}");
 }
+
+#[test]
+fn recorder_does_not_change_the_result() {
+    let (p, c) = (Params::default(), Coupling::default());
+    let sc = &sim::suite_1000()[8];
+    let mut a = controllers::by_name("pid", sc.seed).unwrap();
+    let mut b = controllers::by_name("pid", sc.seed).unwrap();
+    let plain = sim::run_day(sc, Some(a.as_mut()), &p, &c);
+    let (with, se) = sim::run_day_series(sc, Some(b.as_mut()), &p, &c, 60);
+    assert_eq!(plain, with);
+    assert_eq!(se.t_h.len(), 1440);
+    assert_eq!(se.agrp.len(), 1440);
+}
+
+#[test]
+fn series_channels_have_equal_length_and_are_finite() {
+    let (p, c) = (Params::default(), Coupling::default());
+    let (_, se) = sim::run_day_series(&sim::nominal(), None, &p, &c, 600);
+    let n = se.t_h.len();
+    for v in [
+        &se.agrp,
+        &se.pomc,
+        &se.ghrelin,
+        &se.leptin,
+        &se.insulin,
+        &se.glp1,
+        &se.pyy,
+        &se.cortisol,
+        &se.glucose,
+        &se.u_agrp,
+        &se.u_pomc,
+        &se.drive_agrp,
+    ] {
+        assert_eq!(v.len(), n);
+        assert!(v.iter().all(|x| x.is_finite()));
+    }
+}
+
+#[test]
+fn series_stride_one_gives_a_sample_per_second() {
+    let (p, c) = (Params::default(), Coupling::default());
+    let (_, se) = sim::run_day_series(&sim::nominal(), None, &p, &c, 1);
+    assert_eq!(se.t_h.len(), 86_400);
+}

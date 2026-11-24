@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="900" height="400" role="img" aria-labelledby="t3 d3" font-family="Helvetica, Arial, sans-serif">
+  <title id="t3">The closed loop</title>
+  <desc id="d3">The hormone model produces a neural drive. The plant adds the stimulation effect and gives the firing rates of AgRP and POMC neurons. A sensor adds noise and a one-second filter. The controller compares the rates with the targets. The safety filter limits the current before it returns to the plant.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#333"/></marker>
+  </defs>
+  <rect width="900" height="400" fill="#ffffff"/>
+  <text x="450" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#111">One simulated day: the loop at 1 s steps</text>
+  <g font-size="13" fill="#111" text-anchor="middle">
+    <rect x="20" y="90" width="150" height="80" rx="10" fill="#fdecc8" stroke="#a66b00"/>
+    <text x="95" y="122" font-weight="700">Hormone model</text><text x="95" y="142">meals, sleep, stress</text><text x="95" y="158">ghrelin, leptin, PYY ...</text>
+    <rect x="215" y="90" width="150" height="80" rx="10" fill="#e3ecfa" stroke="#1d4e9e"/>
+    <text x="290" y="122" font-weight="700">Neural drive d</text><text x="290" y="142">Hz, from the hormones</text><text x="290" y="158">(assumed weights)</text>
+    <rect x="410" y="90" width="150" height="80" rx="10" fill="#f1e6f7" stroke="#6a1b9a"/>
+    <text x="485" y="122" font-weight="700">Plant</text><text x="485" y="142">x' = (d + g u - x) / 5 s</text><text x="485" y="158">AgRP and POMC rates x</text>
+    <rect x="605" y="90" width="130" height="80" rx="10" fill="#f3f3f3" stroke="#555"/>
+    <text x="670" y="122" font-weight="700">Sensor</text><text x="670" y="142">noise 0.3 to 2 Hz</text><text x="670" y="158">1 s low-pass filter</text>
+    <rect x="750" y="90" width="130" height="80" rx="10" fill="#dff1e1" stroke="#2e7d32"/>
+    <text x="815" y="122" font-weight="700">Targets</text><text x="815" y="142">AgRP 1 Hz</text><text x="815" y="158">POMC 8 Hz</text>
+    <rect x="550" y="250" width="160" height="80" rx="10" fill="#dff1e1" stroke="#2e7d32" stroke-width="2"/>
+    <text x="630" y="282" font-weight="700">Controller</text><text x="630" y="302">PID, MPC, robust MPC,</text><text x="630" y="318">bandit</text>
+    <rect x="330" y="250" width="160" height="80" rx="10" fill="#fbd9d6" stroke="#b3261e" stroke-width="2"/>
+    <text x="410" y="282" font-weight="700">Safety filter</text><text x="410" y="302">peak, rise rate,</text><text x="410" y="318">running-mean limit</text>
+  </g>
+  <g stroke="#333" stroke-width="1.8" fill="none" marker-end="url(#a)">
+    <path d="M170 130 H215"/><path d="M365 130 H410"/><path d="M560 130 H605"/>
+    <path d="M670 170 V210 H630 V250"/>
+    <path d="M815 170 V290 H710"/>
+    <path d="M550 290 H490"/>
+    <path d="M330 290 H290 V200 H440 V170"/>
+  </g>
+  <g font-size="12" fill="#333">
+    <text x="190" y="122" text-anchor="middle">h</text>
+    <text x="388" y="122" text-anchor="middle">d</text>
+    <text x="583" y="122" text-anchor="middle">x</text>
+    <text x="520" y="190">u (uA)</text>
+    <text x="780" y="236">error = target - x</text>
+  </g>
+  <text x="450" y="378" text-anchor="middle" font-size="12" fill="#444">Pass rule for a day: AgRP below 2 Hz for 95% of the day, POMC mean within 1 Hz of 8 Hz, all states finite and bounded.</text>
+</svg>

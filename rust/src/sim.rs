@@ -55,6 +55,30 @@ pub fn run_day(
     p: &Params,
     c: &Coupling,
 ) -> DayResult {
+    run_day_with(sc, ctrl, p, c, &mut |_| {})
+}
+
+/// One sample of the measured day, passed to the recorder of [`run_day_with`].
+pub struct Sample<'a> {
+    /// seconds since the start of the measured day
+    pub t: f64,
+    /// plant output: AgRP and POMC rates (Hz)
+    pub x: [f64; 2],
+    /// neural drive before control (Hz)
+    pub drive: [f64; 2],
+    /// stimulation current (uA)
+    pub u: [f64; 2],
+    pub state: &'a State,
+}
+
+/// Like [`run_day`], and calls `rec` after every 1 s step of the measured day.
+pub fn run_day_with(
+    sc: &Scenario,
+    ctrl: Option<&mut dyn Controller>,
+    p: &Params,
+    c: &Coupling,
+    rec: &mut dyn FnMut(&Sample),
+) -> DayResult {
     // warm-up day, hormones only, coarse step
     let mut s = State::basal(p);
     let wdt = 60.0;
@@ -119,6 +143,13 @@ pub fn run_day(
             r.finite = false;
             break;
         }
+        rec(&Sample {
+            t,
+            x,
+            drive: d,
+            u,
+            state: &s,
+        });
         if x[0] > X_BOUND || x[1] > X_BOUND {
             r.bounded = false;
         }
@@ -521,4 +552,54 @@ pub fn run_suite_par(
         }
     });
     out.into_iter().flatten().collect()
+}
+
+/// A day sampled every `stride_s` seconds (1 s steps inside). Used by the demo and the figures.
+#[derive(Clone, Debug, Default)]
+pub struct Series {
+    pub t_h: Vec<f64>,
+    pub agrp: Vec<f64>,
+    pub pomc: Vec<f64>,
+    pub drive_agrp: Vec<f64>,
+    pub u_agrp: Vec<f64>,
+    pub u_pomc: Vec<f64>,
+    pub ghrelin: Vec<f64>,
+    pub leptin: Vec<f64>,
+    pub insulin: Vec<f64>,
+    pub glp1: Vec<f64>,
+    pub pyy: Vec<f64>,
+    pub cortisol: Vec<f64>,
+    pub glucose: Vec<f64>,
+}
+
+/// Run a day and keep one sample per `stride_s` seconds (last sample of each stride).
+pub fn run_day_series(
+    sc: &Scenario,
+    ctrl: Option<&mut dyn Controller>,
+    p: &Params,
+    c: &Coupling,
+    stride_s: usize,
+) -> (DayResult, Series) {
+    let mut se = Series::default();
+    let stride = stride_s.max(1);
+    let mut k = 0usize;
+    let r = run_day_with(sc, ctrl, p, c, &mut |s| {
+        k += 1;
+        if k.is_multiple_of(stride) {
+            se.t_h.push(s.t / HOUR);
+            se.agrp.push(s.x[0]);
+            se.pomc.push(s.x[1]);
+            se.drive_agrp.push(s.drive[0]);
+            se.u_agrp.push(s.u[0]);
+            se.u_pomc.push(s.u[1]);
+            se.ghrelin.push(s.state.ghrelin);
+            se.leptin.push(s.state.leptin);
+            se.insulin.push(s.state.insulin);
+            se.glp1.push(s.state.glp1);
+            se.pyy.push(s.state.pyy);
+            se.cortisol.push(s.state.cortisol);
+            se.glucose.push(s.state.glucose);
+        }
+    });
+    (r, se)
 }

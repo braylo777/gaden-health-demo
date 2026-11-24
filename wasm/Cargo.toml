@@ -1,0 +1,20 @@
+[package]
+name = "gaden-wasm"
+version = "1.0.0"
+edition = "2021"
+description = "WebAssembly build of the Gaden day simulation for the browser demo. Research only."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+gaden = { path = "../rust" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

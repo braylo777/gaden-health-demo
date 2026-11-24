@@ -302,26 +302,50 @@ impl RobustMpc {
     }
 
     /// Worst-case-optimal input for channel `i`, inside [0, u_hi].
+    ///
+    /// Each scale k gives a convex quadratic `q_k(u) = scc + 2 k sbc u + (k^2 sbb + lambda) u^2`.
+    /// The minimum of their maximum is at the bound, at the minimum of one quadratic, or where two
+    /// quadratics cross. The function tries all of these points and keeps the best one.
     pub fn solve(&self, i: usize, x0: f64, d: f64, dt: f64, u_hi: f64) -> f64 {
         let (scc, sbc, sbb) = self.sums(i, x0, d, dt);
         let lam = self.base.lambda[i];
+        let hi = u_hi.max(0.0);
+        let q: Vec<(f64, f64)> = self
+            .scales
+            .iter()
+            .map(|&k| (k * k * sbb + lam, k * sbc)) // (a_k, b_k): q_k = scc + 2 b_k u + a_k u^2
+            .collect();
         let worst = |u: f64| {
-            self.scales
-                .iter()
-                .map(|&k| scc + 2.0 * k * sbc * u + (k * k * sbb + lam) * u * u)
+            q.iter()
+                .map(|&(a, b)| scc + 2.0 * b * u + a * u * u)
                 .fold(f64::MIN, f64::max)
         };
-        let (mut lo, mut hi) = (0.0, u_hi.max(0.0));
-        for _ in 0..60 {
-            let m1 = lo + (hi - lo) / 3.0;
-            let m2 = hi - (hi - lo) / 3.0;
-            if worst(m1) <= worst(m2) {
-                hi = m2;
-            } else {
-                lo = m1;
+        let mut cand = vec![0.0, hi];
+        for &(a, b) in &q {
+            if a > 0.0 {
+                cand.push(-b / a);
             }
         }
-        0.5 * (lo + hi)
+        for (m, &(a1, b1)) in q.iter().enumerate() {
+            for &(a2, b2) in &q[m + 1..] {
+                // q1 - q2 = 0: (a1 - a2) u^2 + 2 (b1 - b2) u = 0
+                let (da, db) = (a1 - a2, b1 - b2);
+                if da.abs() > 1e-12 {
+                    cand.push(-2.0 * db / da);
+                } else if db.abs() > 1e-12 {
+                    cand.push(0.0);
+                }
+            }
+        }
+        let mut best = (f64::MAX, 0.0);
+        for u in cand {
+            let u = if u.is_finite() { u.clamp(0.0, hi) } else { 0.0 };
+            let w = worst(u);
+            if w < best.0 {
+                best = (w, u);
+            }
+        }
+        best.1
     }
 }
 

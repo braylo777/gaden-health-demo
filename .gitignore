@@ -8,3 +8,7 @@ lcov.info
 .wrangler/
 .env
 ._*
+target-metrics.json
+docs/_build.html
+rust/target/
+wasm/target/

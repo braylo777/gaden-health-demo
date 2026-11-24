@@ -360,3 +360,36 @@ fn rmpc_deterministic() {
     };
     assert_eq!(run(), run());
 }
+
+#[test]
+fn rmpc_minimax_matches_grid_search() {
+    // The exact minimax must be at least as good as the best of 4,001 grid points.
+    let rm = RobustMpc::default();
+    let mut r = Rng(21);
+    for _ in 0..300 {
+        let (x0, d) = (uni(&mut r, 0.0, 50.0), uni(&mut r, 0.0, 70.0));
+        let u = rm.solve(0, x0, d, 1.0, 40.0);
+        let worst = |u: f64| {
+            // rebuild the worst-case horizon cost over gains 0.7, 1.0, 1.3
+            let a = 1.0 - 1.0 / rm.base.tau;
+            let (mut ak, mut cs) = (1.0, [0.0f64; 3]);
+            for _ in 0..rm.base.horizon {
+                ak *= a;
+                for (j, k) in [0.7, 1.0, 1.3].iter().enumerate() {
+                    let b = rm.base.gain[0] * k * (1.0 - ak);
+                    let e = d * (1.0 - ak) + x0 * ak - rm.base.target[0] + b * u;
+                    cs[j] += e * e;
+                }
+            }
+            cs.iter().cloned().fold(f64::MIN, f64::max) + rm.base.lambda[0] * u * u
+        };
+        let best_grid = (0..=4000)
+            .map(|i| worst(i as f64 * 0.01))
+            .fold(f64::MAX, f64::min);
+        assert!(
+            worst(u) <= best_grid + 1e-6 * (1.0 + best_grid),
+            "x0 {x0} d {d}: {} vs {best_grid}",
+            worst(u)
+        );
+    }
+}

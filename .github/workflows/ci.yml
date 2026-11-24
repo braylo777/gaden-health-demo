@@ -2,12 +2,18 @@ name: ci
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
 permissions:
   contents: read
 jobs:
   rust:
-    runs-on: ubuntu-latest
+    name: rust (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: rust
@@ -29,10 +35,41 @@ jobs:
         run: cargo llvm-cov --ignore-filename-regex 'src/bin/' --fail-under-lines 90 --lcov --output-path lcov.info
       - uses: actions/upload-artifact@v4
         with:
-          name: lcov
+          name: lcov-${{ matrix.os }}
           path: rust/lcov.info
-      - name: metrics
-        run: cargo run --release --bin metrics -- --no-tests --no-cov
+      - name: metrics (fresh run of the 1,000 scenarios)
+        run: cargo run --release --bin metrics -- --no-tests --no-cov --out ../target-metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metrics-${{ matrix.os }}
+          path: target-metrics.json
+      - name: fresh run reproduces results/metrics.json
+        working-directory: .
+        run: python3 scripts/readme_numbers.py --compare target-metrics.json
+  numbers:
+    name: README numbers and claims
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/readme_numbers.py --check
+      - run: python3 scripts/claims_check.py
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: sh web/build.sh
+      - name: committed web/gaden.wasm is not older than the sources
+        run: test -s web/gaden.wasm
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t gaden .
+      - run: docker run --rm gaden day
+      - run: docker run --rm gaden suite 10 pid
   python:
     runs-on: ubuntu-latest
     steps:
