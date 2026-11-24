@@ -6,6 +6,7 @@
 //! - [`sim`]: 24-h closed loop and the 240-scenario stress suite.
 //! - [`fit`]: fit to published summary values in `data/targets.csv`.
 
+pub mod anchors;
 pub mod control;
 pub mod controllers;
 pub mod fit;

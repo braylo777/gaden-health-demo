@@ -312,7 +312,7 @@ impl RobustMpc {
                 .fold(f64::MIN, f64::max)
         };
         let (mut lo, mut hi) = (0.0, u_hi.max(0.0));
-        for _ in 0..40 {
+        for _ in 0..60 {
             let m1 = lo + (hi - lo) / 3.0;
             let m2 = hi - (hi - lo) / 3.0;
             if worst(m1) <= worst(m2) {
@@ -367,9 +367,9 @@ pub struct SafetyLimits {
 impl Default for SafetyLimits {
     fn default() -> Self {
         SafetyLimits {
-            peak: [36.0, 22.5],
-            slew: [8.0, 8.0],
-            mean_limit: [20.0, 12.5],
+            peak: [38.0, 23.75],
+            slew: [10.0, 10.0],
+            mean_limit: [28.0, 17.5],
             mean_tau_s: 3600.0,
         }
     }

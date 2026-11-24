@@ -2,7 +2,9 @@
 //! every 2 h, for the default parameters. Regenerate only when the model changes on purpose:
 //! `cargo run --release --example golden`.
 
-use gaden::hormones::{run, Day, Params, HOUR};
+use gaden::hormones::{run, Day, Params, State, HOUR};
+
+type Getter = fn(&State) -> f64;
 use std::fmt::Write as _;
 
 fn main() {
@@ -18,7 +20,7 @@ fn main() {
             .join(", "),
     );
     j.push_str("],\n");
-    let vars: [(&str, fn(&gaden::hormones::State) -> f64); 7] = [
+    let vars: [(&str, Getter); 7] = [
         ("ghrelin", |s| s.ghrelin),
         ("leptin", |s| s.leptin),
         ("insulin", |s| s.insulin),
