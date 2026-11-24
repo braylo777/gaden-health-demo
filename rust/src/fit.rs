@@ -64,9 +64,9 @@ pub fn summaries(p: &Params) -> Vec<(&'static str, f64)> {
         let i1 = idx_at(24.0 + m.at_h + 3.0);
         let pre = tr.s[i0].ghrelin;
         let (mut jmin, mut vmin) = (i0, f64::MAX);
-        for j in i0..=i1 {
-            if tr.s[j].ghrelin < vmin {
-                vmin = tr.s[j].ghrelin;
+        for (j, st) in tr.s.iter().enumerate().take(i1 + 1).skip(i0) {
+            if st.ghrelin < vmin {
+                vmin = st.ghrelin;
                 jmin = j;
             }
         }
