@@ -1,7 +1,7 @@
 # gaden-health-demo
 
 [![ci](https://github.com/braylo777/gaden-health-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/braylo777/gaden-health-demo/actions/workflows/ci.yml)
-[![live demo](https://img.shields.io/badge/demo-LIVE-1b6e2f)](https://gaden-demo.braylo777.workers.dev)
+[![live demo](https://img.shields.io/badge/demo-LIVE-1b6e2f)](https://gaden.braylo.si)
 ![tests](https://img.shields.io/badge/tests-<!--n:tests-->496<!--/n-->-1d4e9e)
 ![license](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -9,7 +9,7 @@ A simulation of a closed-loop controller for the brain's hunger circuit. It runs
 
 > **Simulation only.** This is a computer model. It is not a medical device and not medical advice. It is not a cure. It is not tested in animals or people. It makes no health claim. Do not use it to make decisions about food, sleep, drugs or treatment.
 
-**[Live demo](https://gaden-demo.braylo777.workers.dev)** · **[How Gaden works (paper, PDF)](docs/HOW-GADEN-WORKS.pdf)** · [same text as Markdown](docs/HOW-GADEN-WORKS.md) · [sources](data/SOURCES.md)
+**[Live demo](https://gaden.braylo.si)** · **[How Gaden works (paper, PDF)](docs/HOW-GADEN-WORKS.pdf)** · [same text as Markdown](docs/HOW-GADEN-WORKS.md) · [sources](data/SOURCES.md)
 
 ## Results (v1.0.0)
 
